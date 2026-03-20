@@ -1,0 +1,19 @@
+@import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600&display=swap");
+
+@theme {
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+
+body {
+  margin: 0;
+  background: #0a0a0a;
+  color: #e8e8e8;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+input[type="range"] { accent-color: #6366f1; height: 2px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
