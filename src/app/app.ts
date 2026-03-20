@@ -27,18 +27,24 @@ export class App implements OnInit {
     });
   }
 
-  @HostListener('window:keydown', ['$event'])
+  @HostListener('document:keydown', ['$event'])
   onKey(e: KeyboardEvent) {
-    if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
-    e.preventDefault();
+    const tag = (e.target as HTMLElement)?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     const k = e.code;
-    if (k === 'Space') this.E.isPlaying = !this.E.isPlaying;
-    else if (k === 'ArrowLeft' || k === 'KeyA') this.E.goPrev();
-    else if (k === 'ArrowRight' || k === 'KeyD') this.E.goNext();
-    else if (k === 'KeyW') { this.E.onionSkin = !this.E.onionSkin; this.E.save(); }
-    else if (k === 'KeyE') this.E.cycleTool(1);
-    else if (k === 'KeyQ') this.E.cycleTool(-1);
-    else if (k === 'Delete' || k === 'Backspace') this.E.deleteFrame();
+    const handled = true;
+    switch (k) {
+      case 'Space': this.E.isPlaying = !this.E.isPlaying; break;
+      case 'ArrowLeft': case 'KeyA': this.E.goPrev(); break;
+      case 'ArrowRight': case 'KeyD': this.E.goNext(); break;
+      case 'KeyW': this.E.onionSkin = !this.E.onionSkin; this.E.save(); break;
+      case 'KeyE': this.E.cycleTool(1); break;
+      case 'KeyQ': this.E.cycleTool(-1); break;
+      case 'Delete': case 'Backspace': this.E.deleteFrame(); break;
+      default: return; // don't prevent default for unhandled keys
+    }
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   setGrid(e: Event) { this.E.gridSize = +(e.target as HTMLInputElement).value; this.E.save(); }
