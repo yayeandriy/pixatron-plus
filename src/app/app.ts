@@ -31,17 +31,16 @@ export class App implements OnInit {
   onKey(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    const k = e.code;
-    const handled = true;
+    const k = e.key.toLowerCase();
     switch (k) {
-      case 'Space': this.E.isPlaying = !this.E.isPlaying; break;
-      case 'ArrowLeft': case 'KeyA': this.E.goPrev(); break;
-      case 'ArrowRight': case 'KeyD': this.E.goNext(); break;
-      case 'KeyW': this.E.onionSkin = !this.E.onionSkin; this.E.save(); break;
-      case 'KeyE': this.E.cycleTool(1); break;
-      case 'KeyQ': this.E.cycleTool(-1); break;
-      case 'Delete': case 'Backspace': this.E.deleteFrame(); break;
-      default: return; // don't prevent default for unhandled keys
+      case ' ': this.E.isPlaying = !this.E.isPlaying; break;
+      case 'arrowleft': case 'a': this.E.goPrev(); break;
+      case 'arrowright': case 'd': this.E.goNext(); break;
+      case 'w': this.E.onionSkin = !this.E.onionSkin; this.E.save(); break;
+      case 'e': this.E.cycleTool(1); break;
+      case 'q': this.E.cycleTool(-1); break;
+      case 'delete': case 'backspace': this.E.deleteFrame(); break;
+      default: return;
     }
     e.preventDefault();
     e.stopPropagation();
