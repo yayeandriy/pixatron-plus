@@ -129,18 +129,21 @@ export function createSketch(engine: PixelEngine) {
     };
 
     p.mousePressed = () => {
+      if (E.blockInput) return;
       if (p.mouseX < 0 || p.mouseX >= p.width || p.mouseY < 0 || p.mouseY >= p.height) return;
       const { x, y } = coord();
       E.onMouseDown(x, y);
     };
 
     p.mouseDragged = () => {
+      if (E.blockInput) return;
       if (p.mouseX < 0 || p.mouseX >= p.width || p.mouseY < 0 || p.mouseY >= p.height) return;
       const { x, y } = coord();
       E.onMouseDrag(x, y);
     };
 
     p.mouseReleased = () => {
+      if (E.blockInput) return;
       E.onMouseUp();
     };
   };

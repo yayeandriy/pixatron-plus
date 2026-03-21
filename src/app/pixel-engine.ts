@@ -55,6 +55,9 @@ export class PixelEngine {
   exportLoop = true;
   exportScale = 4; // multiplier: 1×, 2×, 4×, 8×, 16× (1 = actual pixel size)
 
+  // block p5 input when a dialog is open
+  blockInput = false;
+
   // drawing state
   isDrawing = false;
   drawStart = { x: 0, y: 0 };

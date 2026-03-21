@@ -175,8 +175,8 @@ export class App implements OnInit, OnDestroy {
   // ── Export dialog ──
   exportOpen = false;
   exportStatus = '';
-  openExport() { this.exportOpen = true; this.exportStatus = ''; }
-  closeExport() { this.exportOpen = false; }
+  openExport() { this.exportOpen = true; this.exportStatus = ''; this.E.blockInput = true; }
+  closeExport() { this.exportOpen = false; this.E.blockInput = false; }
 
   async doExport(type: string) {
     this.exportStatus = 'Exporting…';
@@ -192,7 +192,7 @@ export class App implements OnInit, OnDestroy {
         case 'glyph': exportGlyph(this.E); break;
       }
       this.exportStatus = type === 'glyph' ? '✓ Copied + downloaded' : '✓ Done!';
-      setTimeout(() => { this.exportStatus = ''; this.exportOpen = false; this.cdr.detectChanges(); }, 1500);
+      setTimeout(() => { this.exportStatus = ''; this.exportOpen = false; this.E.blockInput = false; this.cdr.detectChanges(); }, 1500);
     } catch (err: any) {
       this.exportStatus = '✗ ' + (err?.message ?? err);
       this.cdr.detectChanges();
