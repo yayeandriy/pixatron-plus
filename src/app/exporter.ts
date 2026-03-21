@@ -92,18 +92,20 @@ function downloadText(text: string, filename: string, mime = 'text/plain') {
 // ── PNG ──────────────────────────────────────────────────────────────────────
 
 export function exportPNG(engine: PixelEngine) {
-  const c = renderFrameToCanvas(engine, engine.currentFrame);
+  const scale = engine.exportScale || 1;
+  const c = renderFrameToCanvas(engine, engine.currentFrame, scale);
   c.toBlob(blob => download(blob!, `pixatron-frame${engine.currentFrame+1}.png`), 'image/png');
 }
 
 // ── Sprite sheet ─────────────────────────────────────────────────────────────
 
 export function exportSpriteSheet(engine: PixelEngine) {
-  const size = engine.canvasSize, n = engine.frames.length;
+  const scale = engine.exportScale || 1;
+  const size = engine.canvasSize * scale, n = engine.frames.length;
   const sheet = document.createElement('canvas');
   sheet.width = size * n; sheet.height = size;
   const ctx = sheet.getContext('2d')!;
-  for (let i = 0; i < n; i++) ctx.drawImage(renderFrameToCanvas(engine, i), i * size, 0);
+  for (let i = 0; i < n; i++) ctx.drawImage(renderFrameToCanvas(engine, i, scale), i * size, 0);
   sheet.toBlob(blob => download(blob!, 'pixatron-spritesheet.png'), 'image/png');
 }
 
@@ -160,7 +162,8 @@ function cellToSVG(shape: string, ox: number, oy: number, s: number): string {
 
 export async function exportGIF(engine: PixelEngine) {
   const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
-  const size = engine.canvasSize;
+  const scale = engine.exportScale || 1;
+  const size = engine.canvasSize * scale;
   const delay = Math.round(1000 / engine.fps);
   const loopCount = engine.exportLoop ? 0 : 1;
 
@@ -168,7 +171,7 @@ export async function exportGIF(engine: PixelEngine) {
 
   for (let i = 0; i < engine.frames.length; i++) {
     // GIF has no alpha — flatten transparent areas onto a solid background
-    const frame = renderFrameToCanvas(engine, i);
+    const frame = renderFrameToCanvas(engine, i, scale);
     const c = document.createElement('canvas');
     c.width = size; c.height = size;
     const ctx = c.getContext('2d')!;
@@ -195,7 +198,8 @@ export async function exportGIF(engine: PixelEngine) {
 // ── Video (WebM) ──────────────────────────────────────────────────────────────
 
 export async function exportVideo(engine: PixelEngine) {
-  const size = engine.canvasSize, fps = engine.fps;
+  const scale = engine.exportScale || 1;
+  const size = engine.canvasSize * scale, fps = engine.fps;
   const offscreen = document.createElement('canvas');
   offscreen.width = size; offscreen.height = size;
   const ctx = offscreen.getContext('2d')!;
@@ -214,7 +218,7 @@ export async function exportVideo(engine: PixelEngine) {
   for (const _f of frames) {
     const fi = engine.frames.indexOf(_f);
     ctx.clearRect(0, 0, size, size);
-    ctx.drawImage(renderFrameToCanvas(engine, Math.max(0, fi)), 0, 0);
+    ctx.drawImage(renderFrameToCanvas(engine, Math.max(0, fi), scale), 0, 0);
     await new Promise(r => setTimeout(r, 1000 / fps));
   }
   recorder.stop();

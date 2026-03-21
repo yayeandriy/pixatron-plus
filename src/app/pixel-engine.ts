@@ -53,6 +53,7 @@ export class PixelEngine {
   exportGapColor = '#0e0e0e';
   exportGapTransparent = false;
   exportLoop = true;
+  exportScale = 4; // multiplier: 1×, 2×, 4×, 8×, 16× (1 = actual pixel size)
 
   // drawing state
   isDrawing = false;
@@ -332,6 +333,7 @@ export class PixelEngine {
         exportGapColor: this.exportGapColor,
         exportGapTransparent: this.exportGapTransparent,
         exportLoop: this.exportLoop,
+        exportScale: this.exportScale,
       }));
     } catch { }
   }
@@ -361,6 +363,7 @@ export class PixelEngine {
       this.exportGapColor = d.exportGapColor || '#0e0e0e';
       this.exportGapTransparent = d.exportGapTransparent || false;
       this.exportLoop = d.exportLoop ?? true;
+      this.exportScale = d.exportScale ?? 4;
     } catch { }
   }
 }
