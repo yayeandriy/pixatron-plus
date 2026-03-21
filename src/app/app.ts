@@ -37,7 +37,7 @@ export class App implements OnInit, OnDestroy {
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
-    document.body.style.background = this.E.pageBg;
+    this.applyPageBg();
     import('p5').then(p5Module => {
       const P5 = p5Module.default;
       this.p5Instance = new P5(createSketch(this.E), this.canvasRef.nativeElement);
@@ -73,8 +73,15 @@ export class App implements OnInit, OnDestroy {
 
   setPageBg(e: Event) {
     this.E.pageBg = (e.target as HTMLInputElement).value;
-    document.body.style.background = this.E.pageBg;
+    this.applyPageBg();
     this.E.save();
+  }
+
+  applyPageBg() {
+    const el = document.querySelector('.canvas-area') as HTMLElement;
+    if (el) el.style.background = this.E.pageBg;
+    document.documentElement.style.background = this.E.pageBg;
+    document.body.style.background = this.E.pageBg;
   }
 
   setGrid(e: Event) { this.E.gridSize = +(e.target as HTMLInputElement).value; this.E.save(); }

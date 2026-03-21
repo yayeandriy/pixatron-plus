@@ -1,5 +1,52 @@
 <div class="main-layout">
 
+  <!-- Frames bar — full width at top -->
+  <div class="frames-bar">
+    <span class="frames-bar-label">FRAMES</span>
+    <span class="frames-bar-count">{{ E.currentFrame + 1 }}/{{ E.frames.length }}</span>
+
+    <div class="frames-list" style="flex:1;">
+      @for (f of E.frames; track $index; let i = $index) {
+        <div class="frame-insert-zone"
+             [class.active]="dragOverIndex === i && dragIndex !== null && dragIndex !== i"
+             (dragover)="onFrameDragOver($event, i)"
+             (drop)="onFrameDrop($event, i)">
+          <button class="frame-insert-btn" (click)="insertBefore(i)" title="Insert frame here">+</button>
+        </div>
+        <div class="frame-tile"
+             [class.active]="E.currentFrame === i"
+             [class.dragging]="dragIndex === i"
+             draggable="true"
+             (click)="selectFrame(i)"
+             (dragstart)="onFrameDragStart($event, i)"
+             (dragover)="onFrameDragOver($event, i)"
+             (drop)="onFrameDrop($event, i)"
+             (dragend)="onFrameDragEnd()">
+          {{ i + 1 }}
+        </div>
+      }
+      <div class="frame-insert-zone"
+           [class.active]="dragOverIndex === E.frames.length && dragIndex !== null"
+           (dragover)="onFrameDragOver($event, E.frames.length)"
+           (drop)="onFrameDrop($event, E.frames.length)">
+        <button class="frame-insert-btn" (click)="insertBefore(E.frames.length)">+</button>
+      </div>
+      <div class="frame-tile add-frame" (click)="E.addFrame()">+</div>
+    </div>
+
+    <div class="frames-bar-actions">
+      <button class="btn-op" style="padding:3px 8px;" (click)="E.copyFrame()">COPY</button>
+      @if (E.frames.length > 1) {
+        <button class="btn-op btn-danger" style="padding:3px 8px;" (click)="E.deleteFrame()">DEL</button>
+      }
+      <button class="btn-op" style="padding:3px 8px;" (click)="E.goPrev()">←</button>
+      <button class="btn-op" style="padding:3px 8px;" (click)="E.goNext()">→</button>
+    </div>
+  </div>
+
+  <!-- Work area: canvas + sidebar -->
+  <div class="work-area">
+
   <!-- Canvas area with inline preview -->
   <div class="canvas-area">
     <!-- Actual-size preview — top-left corner, exact pixel size -->
@@ -118,62 +165,16 @@
       <input type="range" [value]="E.fps" (input)="setFps($event)" min="1" max="30" style="width:100%;" />
     </div>
 
-    <!-- Frames — drag/drop, insert between -->
-    <div class="sidebar-section" style="flex:1;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-        <span class="section-label" style="margin:0;">FRAMES <span class="hint-label">←/→</span></span>
-        <span class="slider-val">{{ E.currentFrame + 1 }}/{{ E.frames.length }}</span>
-      </div>
-
-      <div class="frames-list">
-        @for (f of E.frames; track $index; let i = $index) {
-          <!-- Insert-before zone -->
-          <div class="frame-insert-zone"
-               [class.active]="dragOverIndex === i && dragIndex !== null && dragIndex !== i"
-               (dragover)="onFrameDragOver($event, i)"
-               (drop)="onFrameDrop($event, i)">
-            <button class="frame-insert-btn" (click)="insertBefore(i)" title="Insert frame here">+</button>
-          </div>
-          <!-- Frame tile -->
-          <div class="frame-tile"
-               [class.active]="E.currentFrame === i"
-               [class.dragging]="dragIndex === i"
-               draggable="true"
-               (click)="selectFrame(i)"
-               (dragstart)="onFrameDragStart($event, i)"
-               (dragover)="onFrameDragOver($event, i)"
-               (drop)="onFrameDrop($event, i)"
-               (dragend)="onFrameDragEnd()">
-            {{ i + 1 }}
-          </div>
-        }
-        <!-- Insert at end -->
-        <div class="frame-insert-zone"
-             [class.active]="dragOverIndex === E.frames.length && dragIndex !== null"
-             (dragover)="onFrameDragOver($event, E.frames.length)"
-             (drop)="onFrameDrop($event, E.frames.length)">
-          <button class="frame-insert-btn" (click)="insertBefore(E.frames.length)" title="Insert frame at end">+</button>
-        </div>
-        <!-- Add button -->
-        <div class="frame-tile add-frame" (click)="E.addFrame()">+</div>
-      </div>
-
-      <div style="display:flex;gap:4px;margin-top:6px;">
-        <button class="btn-op" style="flex:1;" (click)="E.copyFrame()">COPY</button>
-        @if (E.frames.length > 1) {
-          <button class="btn-op btn-danger" style="flex:1;" (click)="E.deleteFrame()">DEL</button>
-        }
-      </div>
-    </div>
-
     <!-- Hints -->
     <div class="hints">
-      <div>SPC play · ←/A →/D frames</div>
+      <div>SPC play · ←A →D frames</div>
       <div>Q/E tools · ⇧Q/⇧E first/last</div>
-      <div>F2 preview · F3 export · ⌘Z undo</div>
+      <div>F2 preview · F3 export</div>
+      <div>⌘Z undo · ⌘Y redo</div>
     </div>
   </div>
-</div>
+  </div><!-- /work-area -->
+</div><!-- /main-layout -->
 
 <!-- Export Dialog -->
 @if (exportOpen) {
