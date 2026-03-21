@@ -1,20 +1,19 @@
 export type Tool = 'pencil' | 'rectangle' | 'line' | 'circle' | 'fill';
-export type CellShape = 'square' | 'circle' | 'triangle' | 'h-stripes' | 'v-stripes' | 'd-stripes';
+export type CellShape = 'square' | 'circle' | 'triangle' | 'stripes' | 'd-stripes';
 
 // Variant cycles: clicking a selected shape cycles its variant
 export const SHAPE_VARIANTS: Record<CellShape, string[]> = {
-  'square':    ['square'],
-  'circle':    ['circle'],
-  'triangle':  ['tri-up', 'tri-down', 'tri-left', 'tri-right'],
-  'h-stripes': ['h-stripes'],
-  'v-stripes': ['v-stripes'],
-  'd-stripes': ['d-stripes-tl', 'd-stripes-tr'],
+  'square':   ['square'],
+  'circle':   ['circle'],
+  'triangle': ['tri-up', 'tri-down', 'tri-left', 'tri-right'],
+  'stripes':  ['h-stripes', 'v-stripes'],
+  'd-stripes':['d-stripes-tl', 'd-stripes-tr'],
 };
 
 export const TOOLS: Tool[] = ['pencil', 'rectangle', 'line', 'circle', 'fill'];
-export const SHAPES: CellShape[] = ['square', 'circle', 'triangle', 'h-stripes', 'v-stripes', 'd-stripes'];
+export const SHAPES: CellShape[] = ['square', 'circle', 'triangle', 'stripes', 'd-stripes'];
 export const TOOL_LABELS: Record<Tool, string> = { pencil: 'PEN', rectangle: 'RECT', line: 'LINE', circle: 'CIRC', fill: 'FILL' };
-export const SHAPE_LABELS: Record<CellShape, string> = { square: '■', circle: '●', triangle: '▲', 'h-stripes': '☰', 'v-stripes': '|||', 'd-stripes': '///' };
+export const SHAPE_LABELS: Record<CellShape, string> = { square: '■', circle: '●', triangle: '▲', stripes: '☰', 'd-stripes': '///' };
 export const VARIANT_LABELS: Record<string, string> = {
   'square': '■', 'circle': '●',
   'tri-up': '▲', 'tri-down': '▼', 'tri-left': '◀', 'tri-right': '▶',
@@ -38,6 +37,9 @@ export class PixelEngine {
   cellVariant: string = 'square'; // active variant within the shape
   onionSkin = false;
   onionSkinOpacity = 30;
+
+  // app background
+  pageBg = '#0a0a0a';
 
   // export settings
   exportFilledColor = '#ffffff';
@@ -315,6 +317,7 @@ export class PixelEngine {
         cellShape: this.cellShape, onionSkin: this.onionSkin,
         onionSkinOpacity: this.onionSkinOpacity,
         activeTool: this.activeTool, isPlaying: this.isPlaying, cellVariant: this.cellVariant,
+        pageBg: this.pageBg,
         exportFilledColor: this.exportFilledColor,
         exportFilledTransparent: this.exportFilledTransparent,
         exportEmptyColor: this.exportEmptyColor,
@@ -341,6 +344,7 @@ export class PixelEngine {
       this.activeTool = d.activeTool || 'pencil';
       this.isPlaying = d.isPlaying || false;
       this.cellVariant = d.cellVariant || SHAPE_VARIANTS[this.cellShape as CellShape][0];
+      this.pageBg = d.pageBg || '#0a0a0a';
       this.exportFilledColor = d.exportFilledColor || '#ffffff';
       this.exportFilledTransparent = d.exportFilledTransparent || false;
       this.exportEmptyColor = d.exportEmptyColor || '#0e0e0e';

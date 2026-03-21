@@ -21,7 +21,7 @@ export function createSketch(engine: PixelEngine) {
         case 'tri-left':  p.triangle(ox+s, oy, ox+s, oy+s, ox, oy+s/2); break;
         case 'tri-right': p.triangle(ox, oy, ox+s, oy+s/2, ox, oy+s); break;
         case 'h-stripes': for(let i=0;i<3;i++) p.rect(ox, oy+i*(s/3)+1, s, s/3-2); break;
-        case 'v-stripes': for(let i=0;i<3;i++) p.rect(ox+i*(s/3)+1, oy, s/3-2, s); break;
+        case 'v-stripes': for(let i=0;i<3;i++) p.rect(ox+i*(s/3)+1,  oy, s/3-2, s); break;
         case 'd-stripes-tl':
         case 'd-stripes-tr': {
           const ctx = (p as any).drawingContext as CanvasRenderingContext2D;
