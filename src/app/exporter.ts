@@ -173,20 +173,34 @@ export async function exportGIF(engine: PixelEngine) {
 
   const gif = GIFEncoder();
 
-  for (let i = 0; i < engine.frames.length; i++) {
-    // Render frame at export scale
-    const frame = renderFrameToCanvas(engine, i, scale);
-    const size = frame.width; // actual rendered size
+  // Solid colors for GIF (no transparency)
+  const gifBg    = engine.exportGapColor    || engine.pageBg        || '#000000';
+  const gifFill  = engine.exportFilledColor || engine.cellFillColor || '#ffffff';
+  const gifEmpty = engine.exportEmptyColor  || engine.cellEmptyColor|| '#1e1e1e';
 
-    // GIF has no alpha — flatten onto solid background
+  for (let i = 0; i < engine.frames.length; i++) {
+    const { gridSize, gap, pixelSize } = engine;
+    const ps = scale;
+    const g  = scale > 1 ? Math.round(gap * scale / pixelSize) : 0;
+    const size = gridSize * ps;
+    const f = engine.frames[i];
+    const shape = engine.cellVariant || engine.cellShape;
+
     const c = document.createElement('canvas');
     c.width = size; c.height = size;
     const ctx = c.getContext('2d')!;
-    const bgFallback = (!engine.exportGapTransparent ? engine.exportGapColor : null)
-      ?? engine.pageBg ?? '#000000';
-    ctx.fillStyle = bgFallback;
+
+    ctx.fillStyle = gifBg;
     ctx.fillRect(0, 0, size, size);
-    ctx.drawImage(frame, 0, 0);
+
+    for (let y = 0; y < gridSize; y++) {
+      for (let x = 0; x < gridSize; x++) {
+        ctx.fillStyle = f?.[y]?.[x] ? gifFill : gifEmpty;
+        const ox = x * ps + g / 2, oy = y * ps + g / 2, s = ps - g;
+        drawCell(ctx, shape, ox, oy, s);
+      }
+    }
+
     const data = ctx.getImageData(0, 0, size, size).data;
     const pixels = size * size;
     const rgb = new Uint8Array(pixels * 3);
