@@ -70,8 +70,11 @@
 
     <!-- Header -->
     <div class="sidebar-section" style="background:#0a0a0a;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:12px;font-weight:700;letter-spacing:0.15em;color:#fff;">PIXATRON</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:4px;">
+        <button class="btn-project-name" (click)="projectsOpen=!projectsOpen;E.blockInput=projectsOpen" [class.active]="projectsOpen" title="Projects (F1)">
+          <span style="font-size:10px;color:#555;letter-spacing:0.08em;">PROJECT</span>
+          <span style="font-size:11px;color:#ddd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">{{ activeProjectName }}</span>
+        </button>
         <button class="btn-icon" (click)="togglePreview()" [class.active]="showPreview" title="Actual size preview F2">⊙</button>
       </div>
     </div>
@@ -186,6 +189,53 @@
   </div>
   </div><!-- /work-area -->
 </div><!-- /main-layout -->
+
+<!-- Projects Panel -->
+@if (projectsOpen) {
+  <div class="dialog-backdrop" (click)="projectsOpen=false;E.blockInput=false">
+    <div class="dialog" style="width:420px;max-height:80vh;display:flex;flex-direction:column;" (click)="$event.stopPropagation()">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="dialog-title" style="margin:0;">PROJECTS</div>
+        <button class="btn-primary" style="width:auto;padding:5px 12px;font-size:11px;" (click)="newProject()">+ NEW</button>
+      </div>
+
+      <div class="projects-list">
+        @for (p of projects; track p.id) {
+          <div class="project-row" [class.active]="p.id===activeProjectId" (click)="switchToProject(p.id)">
+            <!-- Thumbnail -->
+            <div class="project-thumb">
+              <img [src]="p.thumbnail" style="width:32px;height:32px;image-rendering:pixelated;" />
+            </div>
+            <!-- Name (editable) -->
+            <div class="project-info">
+              @if (editingNameId === p.id) {
+                <input id="rename-input" class="project-rename-input"
+                       [(ngModel)]="editingNameValue"
+                       (blur)="commitRename()"
+                       (keydown.enter)="commitRename()"
+                       (keydown.escape)="editingNameId=null"
+                       (click)="$event.stopPropagation()" />
+              } @else {
+                <div class="project-name" (dblclick)="startRename(p,$event)">{{ p.name }}</div>
+              }
+              <div class="project-date">{{ p.updatedAt | date:'dd MMM, HH:mm' }}</div>
+            </div>
+            <!-- Actions -->
+            <div class="project-actions" (click)="$event.stopPropagation()">
+              <button class="btn-icon" (click)="startRename(p,$event)" title="Rename">✎</button>
+              <button class="btn-icon" (click)="duplicateProjectAction(p.id,$event)" title="Duplicate">⎘</button>
+              @if (projects.length > 1) {
+                <button class="btn-icon" style="color:#884444;" (click)="deleteProjectAction(p.id,$event)" title="Delete">✕</button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <button class="dialog-close" style="margin-top:12px;" (click)="projectsOpen=false;E.blockInput=false">✕ CLOSE</button>
+    </div>
+  </div>
+}
 
 <!-- Export Dialog -->
 @if (exportOpen) {

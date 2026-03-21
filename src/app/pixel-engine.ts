@@ -21,7 +21,6 @@ export const VARIANT_LABELS: Record<string, string> = {
   'd-stripes-tl': '╲╲', 'd-stripes-tr': '╱╱',
 };
 
-const STORAGE_KEY = 'pixatron-state';
 const CANVAS_SIZE = 480;
 const MAX_UNDO = 50;
 
@@ -318,9 +317,14 @@ export class PixelEngine {
   }
 
   // ── Persistence ──
+  // saveCallback is set by the app to persist to the active project
+  saveCallback?: () => void;
+
   save() {
+    if (this.saveCallback) { this.saveCallback(); return; }
+    // fallback: legacy key
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      localStorage.setItem('pixatron-state', JSON.stringify({
         frames: this.frames, currentFrame: this.currentFrame,
         gridSize: this.gridSize, gap: this.gap, fps: this.fps,
         cellShape: this.cellShape, onionSkin: this.onionSkin,
@@ -341,9 +345,37 @@ export class PixelEngine {
     } catch { }
   }
 
+  loadFromState(d: any) {
+    if (!d) return;
+    this.frames = d.frames || [this.emptyFrame()];
+    this.currentFrame = Math.min(d.currentFrame || 0, Math.max(0, this.frames.length - 1));
+    this.gridSize = d.gridSize || 16;
+    this.gap = d.gap ?? 1;
+    this.fps = d.fps || 8;
+    this.cellShape = d.cellShape || 'square';
+    this.cellVariant = d.cellVariant || SHAPE_VARIANTS[this.cellShape as CellShape][0];
+    this.onionSkin = d.onionSkin || false;
+    this.onionSkinOpacity = d.onionSkinOpacity || 30;
+    this.activeTool = d.activeTool || 'pencil';
+    this.isPlaying = false;
+    this.pageBg = d.pageBg || '#0a0a0a';
+    this.cellFillColor = d.cellFillColor || '#ffffff';
+    this.cellEmptyColor = d.cellEmptyColor || '#1e1e1e';
+    this.exportFilledColor = d.exportFilledColor || '#ffffff';
+    this.exportFilledTransparent = d.exportFilledTransparent || false;
+    this.exportEmptyColor = d.exportEmptyColor || '#0e0e0e';
+    this.exportEmptyTransparent = d.exportEmptyTransparent || false;
+    this.exportGapColor = d.exportGapColor || '#0e0e0e';
+    this.exportGapTransparent = d.exportGapTransparent || false;
+    this.exportLoop = d.exportLoop ?? true;
+    this.exportScale = d.exportScale ?? 4;
+    this.undoStack = [];
+    this.redoStack = [];
+  }
+
   load() {
     try {
-      const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '');
+      const d = JSON.parse(localStorage.getItem('pixatron-state') || '');
       if (!d) return;
       this.frames = d.frames || [];
       this.currentFrame = Math.min(d.currentFrame || 0, Math.max(0, (d.frames?.length || 1) - 1));
