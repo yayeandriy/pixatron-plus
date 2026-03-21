@@ -233,11 +233,21 @@ export async function exportGIF(engine: PixelEngine) {
 
     const imageData = ctx.getImageData(0, 0, size, size).data;
     const indexed = new Uint8Array(size * size);
+    // nearest-color matching (handles anti-aliasing/sub-pixel rounding)
+    const [pr, pg, pb] = uniquePalette.map(c => [(c>>16)&255,(c>>8)&255,c&255]);
+    function nearest(r: number, g2: number, b: number): number {
+      let best = 0, bestDist = Infinity;
+      for (let k = 0; k < uniquePalette.length; k++) {
+        const cr = (uniquePalette[k]>>16)&255;
+        const cg = (uniquePalette[k]>>8)&255;
+        const cb = uniquePalette[k]&255;
+        const d = (r-cr)**2 + (g2-cg)**2 + (b-cb)**2;
+        if (d < bestDist) { bestDist = d; best = k; }
+      }
+      return best;
+    }
     for (let j = 0; j < size * size; j++) {
-      const r = imageData[j*4], g2 = imageData[j*4+1], b = imageData[j*4+2];
-      const color = (r<<16)|(g2<<8)|b;
-      const idx = uniquePalette.indexOf(color);
-      indexed[j] = idx >= 0 ? idx : bgIdx;
+      indexed[j] = nearest(imageData[j*4], imageData[j*4+1], imageData[j*4+2]);
     }
 
     gw.addFrame(0, 0, size, size, indexed, {
