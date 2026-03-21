@@ -60,7 +60,7 @@ export function createSketch(engine: PixelEngine) {
     };
 
     p.draw = () => {
-      p.background(14);
+      p.background(E.pageBg || '#0e0e0e');
 
       // Grid (empty cells)
       p.fill(30);
