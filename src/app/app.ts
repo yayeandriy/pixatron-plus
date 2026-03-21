@@ -185,6 +185,7 @@ export class App implements OnInit, OnDestroy {
     else if (key === ' ') { this.E.isPlaying = !this.E.isPlaying; }
     else if (key === 'ArrowLeft' || key === 'a' || key === 'A') { this.E.goPrev(); }
     else if (key === 'ArrowRight' && e.shiftKey) { this.E.goNextOrCreate(); }
+    else if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'D') { this.E.goLast(); this.E.goNextOrCreate(); e.preventDefault(); return; }
     else if (key === 'ArrowRight' || key === 'd' || key === 'D') { this.E.goNext(); }
     else if (key === 'Delete' || key === 'Backspace') { this.E.deleteFrame(); }
     else if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { this.E.undo(); e.preventDefault(); return; }
