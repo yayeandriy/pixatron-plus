@@ -15,12 +15,15 @@ function hexToRgba(hex: string, alpha = 1): string {
 
 // ── canvas renderer ──────────────────────────────────────────────────────────
 
-function renderFrameToCanvas(engine: PixelEngine, frameIndex: number, scale = 1): HTMLCanvasElement {
-  const { gridSize, gap, pixelSize } = engine;
+// scale = pixels per grid cell (1 = 1px per cell, 4 = 4px per cell, etc.)
+function renderFrameToCanvas(engine: PixelEngine, frameIndex: number, scale = 4): HTMLCanvasElement {
+  const { gridSize, gap } = engine;
   const cellShape = engine.cellVariant || engine.cellShape;
-  const size = engine.canvasSize * scale;
-  const ps = pixelSize * scale;
-  const g = gap * scale;
+
+  // At scale=1: 1px per cell, no gap. At higher scales, gap is scaled too.
+  const ps = scale;                         // pixels per cell (including gap)
+  const g  = scale > 1 ? Math.round(gap * scale / engine.pixelSize) : 0;
+  const size = gridSize * ps;               // total canvas size
 
   const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent);
   const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent);
@@ -30,7 +33,7 @@ function renderFrameToCanvas(engine: PixelEngine, frameIndex: number, scale = 1)
   c.width = size; c.height = size;
   const ctx = c.getContext('2d')!;
 
-  // Background / gap
+  // Fill background (gap color)
   if (gapColor) { ctx.fillStyle = gapColor; ctx.fillRect(0, 0, size, size); }
 
   const f = engine.frames[frameIndex];
@@ -40,7 +43,7 @@ function renderFrameToCanvas(engine: PixelEngine, frameIndex: number, scale = 1)
     for (let x = 0; x < gridSize; x++) {
       const filled = !!f[y]?.[x];
       const color = filled ? filledColor : emptyColor;
-      if (!color) continue; // transparent — skip
+      if (!color) continue;
       ctx.fillStyle = color;
       const ox = x * ps + g / 2, oy = y * ps + g / 2, s = ps - g;
       drawCell(ctx, cellShape, ox, oy, s);
@@ -100,12 +103,14 @@ export function exportPNG(engine: PixelEngine) {
 // ── Sprite sheet ─────────────────────────────────────────────────────────────
 
 export function exportSpriteSheet(engine: PixelEngine) {
-  const scale = engine.exportScale || 1;
-  const size = engine.canvasSize * scale, n = engine.frames.length;
+  const scale = engine.exportScale || 4;
+  const n = engine.frames.length;
+  const frames = engine.frames.map((_, i) => renderFrameToCanvas(engine, i, scale));
+  const size = frames[0].width;
   const sheet = document.createElement('canvas');
   sheet.width = size * n; sheet.height = size;
   const ctx = sheet.getContext('2d')!;
-  for (let i = 0; i < n; i++) ctx.drawImage(renderFrameToCanvas(engine, i, scale), i * size, 0);
+  for (let i = 0; i < n; i++) ctx.drawImage(frames[i], i * size, 0);
   sheet.toBlob(blob => download(blob!, 'pixatron-spritesheet.png'), 'image/png');
 }
 
@@ -162,31 +167,33 @@ function cellToSVG(shape: string, ox: number, oy: number, s: number): string {
 
 export async function exportGIF(engine: PixelEngine) {
   const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
-  const scale = engine.exportScale || 1;
-  const size = engine.canvasSize * scale;
+  const scale = engine.exportScale || 4;
   const delay = Math.round(1000 / engine.fps);
   const loopCount = engine.exportLoop ? 0 : 1;
 
   const gif = GIFEncoder();
 
   for (let i = 0; i < engine.frames.length; i++) {
-    // GIF has no alpha — flatten transparent areas onto a solid background
+    // Render frame at export scale
     const frame = renderFrameToCanvas(engine, i, scale);
+    const size = frame.width; // actual rendered size
+
+    // GIF has no alpha — flatten onto solid background
     const c = document.createElement('canvas');
     c.width = size; c.height = size;
     const ctx = c.getContext('2d')!;
-    // Fill with solid bg first (pageBg or gap color or black)
     const bgFallback = (!engine.exportGapTransparent ? engine.exportGapColor : null)
       ?? engine.pageBg ?? '#000000';
     ctx.fillStyle = bgFallback;
     ctx.fillRect(0, 0, size, size);
     ctx.drawImage(frame, 0, 0);
     const data = ctx.getImageData(0, 0, size, size).data;
-    const rgb = new Uint8Array(size * size * 3);
-    for (let j = 0; j < size * size; j++) {
+    const pixels = size * size;
+    const rgb = new Uint8Array(pixels * 3);
+    for (let j = 0; j < pixels; j++) {
       rgb[j*3] = data[j*4]; rgb[j*3+1] = data[j*4+1]; rgb[j*3+2] = data[j*4+2];
     }
-    const palette = quantize(rgb, 16);
+    const palette = quantize(rgb, 256);
     const indexed = applyPalette(rgb, palette);
     gif.writeFrame(indexed, size, size, { palette, delay, repeat: loopCount });
   }
@@ -198,8 +205,8 @@ export async function exportGIF(engine: PixelEngine) {
 // ── Video (WebM) ──────────────────────────────────────────────────────────────
 
 export async function exportVideo(engine: PixelEngine) {
-  const scale = engine.exportScale || 1;
-  const size = engine.canvasSize * scale, fps = engine.fps;
+  const scale = engine.exportScale || 4;
+  const size = engine.gridSize * scale, fps = engine.fps;
   const offscreen = document.createElement('canvas');
   offscreen.width = size; offscreen.height = size;
   const ctx = offscreen.getContext('2d')!;
@@ -218,7 +225,7 @@ export async function exportVideo(engine: PixelEngine) {
   for (const _f of frames) {
     const fi = engine.frames.indexOf(_f);
     ctx.clearRect(0, 0, size, size);
-    ctx.drawImage(renderFrameToCanvas(engine, Math.max(0, fi), scale), 0, 0);
+    ctx.drawImage(renderFrameToCanvas(engine, Math.max(0, fi >= 0 ? fi : 0), scale), 0, 0);
     await new Promise(r => setTimeout(r, 1000 / fps));
   }
   recorder.stop();
