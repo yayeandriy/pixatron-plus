@@ -16,7 +16,8 @@ function hexToRgba(hex: string, alpha = 1): string {
 // ── canvas renderer ──────────────────────────────────────────────────────────
 
 function renderFrameToCanvas(engine: PixelEngine, frameIndex: number, scale = 1): HTMLCanvasElement {
-  const { gridSize, gap, pixelSize, cellShape } = engine;
+  const { gridSize, gap, pixelSize } = engine;
+  const cellShape = engine.cellVariant || engine.cellShape;
   const size = engine.canvasSize * scale;
   const ps = pixelSize * scale;
   const g = gap * scale;
@@ -52,14 +53,24 @@ function drawCell(ctx: CanvasRenderingContext2D, shape: string, ox: number, oy: 
   ctx.beginPath();
   switch (shape) {
     case 'square':    ctx.rect(ox, oy, s, s); break;
-    case 'circle':    ctx.ellipse(ox + s/2, oy + s/2, s/2, s/2, 0, 0, Math.PI*2); break;
-    case 'triangle':  ctx.moveTo(ox+s/2,oy); ctx.lineTo(ox+s,oy+s); ctx.lineTo(ox,oy+s); break;
+    case 'circle':    ctx.ellipse(ox+s/2, oy+s/2, s/2, s/2, 0, 0, Math.PI*2); break;
+    case 'tri-up':    ctx.moveTo(ox+s/2,oy); ctx.lineTo(ox+s,oy+s); ctx.lineTo(ox,oy+s); break;
+    case 'tri-down':  ctx.moveTo(ox,oy); ctx.lineTo(ox+s,oy); ctx.lineTo(ox+s/2,oy+s); break;
+    case 'tri-left':  ctx.moveTo(ox+s,oy); ctx.lineTo(ox+s,oy+s); ctx.lineTo(ox,oy+s/2); break;
+    case 'tri-right': ctx.moveTo(ox,oy); ctx.lineTo(ox+s,oy+s/2); ctx.lineTo(ox,oy+s); break;
     case 'h-stripes': for(let i=0;i<3;i++) ctx.rect(ox,oy+i*(s/3)+1,s,s/3-2); break;
     case 'v-stripes': for(let i=0;i<3;i++) ctx.rect(ox+i*(s/3)+1,oy,s/3-2,s); break;
-    case 'd-stripes': {
+    case 'd-stripes-tl':
+    case 'd-stripes-tr': {
       ctx.save(); ctx.rect(ox,oy,s,s); ctx.clip();
-      for(let i=-s;i<s*2;i+=4){ctx.moveTo(ox+i,oy);ctx.lineTo(ox+i+s,oy+s);}
-      ctx.restore(); break;
+      const col = ctx.fillStyle as string;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      if (shape === 'd-stripes-tl') {
+        for(let i=-s;i<s*2;i+=4){ctx.moveTo(ox+i,oy);ctx.lineTo(ox+i+s,oy+s);}
+      } else {
+        for(let i=-s;i<s*2;i+=4){ctx.moveTo(ox+s-i,oy);ctx.lineTo(ox-i,oy+s);}
+      }
+      ctx.stroke(); ctx.restore(); return;
     }
     default: ctx.rect(ox, oy, s, s);
   }
@@ -153,7 +164,7 @@ export async function exportGIF(engine: PixelEngine) {
   const delay = Math.round(1000 / engine.fps);
   const loopCount = engine.exportLoop ? 0 : 1;
 
-  const gif = GIFEncoder({ repeat: loopCount });
+  const gif = GIFEncoder();
 
   for (let i = 0; i < engine.frames.length; i++) {
     // GIF has no alpha — flatten transparent areas onto a solid background
@@ -174,7 +185,7 @@ export async function exportGIF(engine: PixelEngine) {
     }
     const palette = quantize(rgb, 16);
     const indexed = applyPalette(rgb, palette);
-    gif.writeFrame(indexed, size, size, { palette, delay });
+    gif.writeFrame(indexed, size, size, { palette, delay, repeat: loopCount });
   }
 
   gif.finish();
