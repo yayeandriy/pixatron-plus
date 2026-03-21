@@ -151,20 +151,30 @@ export async function exportGIF(engine: PixelEngine) {
   const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
   const size = engine.canvasSize;
   const delay = Math.round(1000 / engine.fps);
-  const loopCount = engine.exportLoop ? 0 : 1; // 0 = infinite, 1 = play once
+  const loopCount = engine.exportLoop ? 0 : 1;
 
-  const gif = GIFEncoder();
+  const gif = GIFEncoder({ repeat: loopCount });
 
   for (let i = 0; i < engine.frames.length; i++) {
-    const c = renderFrameToCanvas(engine, i);
-    const data = c.getContext('2d')!.getImageData(0, 0, size, size).data;
+    // GIF has no alpha — flatten transparent areas onto a solid background
+    const frame = renderFrameToCanvas(engine, i);
+    const c = document.createElement('canvas');
+    c.width = size; c.height = size;
+    const ctx = c.getContext('2d')!;
+    // Fill with solid bg first (pageBg or gap color or black)
+    const bgFallback = (!engine.exportGapTransparent ? engine.exportGapColor : null)
+      ?? engine.pageBg ?? '#000000';
+    ctx.fillStyle = bgFallback;
+    ctx.fillRect(0, 0, size, size);
+    ctx.drawImage(frame, 0, 0);
+    const data = ctx.getImageData(0, 0, size, size).data;
     const rgb = new Uint8Array(size * size * 3);
     for (let j = 0; j < size * size; j++) {
       rgb[j*3] = data[j*4]; rgb[j*3+1] = data[j*4+1]; rgb[j*3+2] = data[j*4+2];
     }
     const palette = quantize(rgb, 16);
     const indexed = applyPalette(rgb, palette);
-    gif.writeFrame(indexed, size, size, { palette, delay, repeat: loopCount });
+    gif.writeFrame(indexed, size, size, { palette, delay });
   }
 
   gif.finish();
