@@ -177,10 +177,10 @@ export async function exportGIF(engine: PixelEngine) {
   const size  = gridSize * ps;
   const shape = cellVariant || cellShape;
 
-  // Resolve colors — always opaque for GIF
-  const bgColor   = engine.exportGapColor    || engine.pageBg        || '#000000';
-  const fillColor = engine.exportFilledColor || engine.cellFillColor || '#ffffff';
-  const emptyColor= engine.exportEmptyColor  || engine.cellEmptyColor|| '#1e1e1e';
+  // Resolve export colors — transparent falls back to canvas color, then black
+  const bgColor    = engine.exportGapTransparent    ? (engine.pageBg        || '#000000') : (engine.exportGapColor    || engine.pageBg        || '#000000');
+  const fillColor  = engine.exportFilledTransparent ? (engine.cellFillColor || '#ffffff') : (engine.exportFilledColor || engine.cellFillColor || '#ffffff');
+  const emptyColor = engine.exportEmptyTransparent  ? (engine.cellEmptyColor|| '#1e1e1e') : (engine.exportEmptyColor  || engine.cellEmptyColor|| '#1e1e1e');
 
   function hexToRgb(hex: string): [number,number,number] {
     const n = parseInt(hex.replace('#',''), 16);
