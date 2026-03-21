@@ -2,7 +2,7 @@
 
   <!-- Canvas -->
   <div class="canvas-area">
-    <div #canvasContainer class="canvas-wrapper"></div>
+    <div #canvasContainer></div>
   </div>
 
   <!-- Sidebar -->
@@ -59,6 +59,15 @@
       <input type="range" [value]="E.gap" (input)="setGap($event)" min="0" max="6" step="1" style="width:100%;" />
     </div>
 
+    <!-- Undo/Redo -->
+    <div class="sidebar-section">
+      <div class="section-label">HISTORY <span class="hint-label">⌘Z / ⌘Y</span></div>
+      <div class="btn-grid" style="grid-template-columns:repeat(2,1fr)">
+        <button class="btn-op" (click)="E.undo()" [disabled]="!E.canUndo" [style.opacity]="E.canUndo?1:0.3">↩ UNDO</button>
+        <button class="btn-op" (click)="E.redo()" [disabled]="!E.canRedo" [style.opacity]="E.canRedo?1:0.3">↪ REDO</button>
+      </div>
+    </div>
+
     <!-- Frame Ops -->
     <div class="sidebar-section">
       <div class="section-label">FRAME OPS</div>
@@ -69,6 +78,15 @@
         <button class="btn-op" (click)="E.movePixels(0,1)">↓</button>
         <button class="btn-op" (click)="E.movePixels(-1,0)">←</button>
         <button class="btn-op" (click)="E.movePixels(1,0)">→</button>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="sidebar-section">
+      <div class="section-label">EXPORT</div>
+      <div class="btn-grid" style="grid-template-columns:repeat(2,1fr)">
+        <button class="btn-op" (click)="exportFrame()">PNG</button>
+        <button class="btn-op" (click)="exportSheet()">SHEET</button>
       </div>
     </div>
 
@@ -109,7 +127,8 @@
     <!-- Hints -->
     <div style="padding:8px 12px;border-top:1px solid #1e1e1e;color:#2a2a2a;line-height:1.6;">
       <div>SPC play · ←A →D frames</div>
-      <div>Q/E tools · W onion · DEL</div>
+      <div>Q/E tools · ⇧Q/⇧E first/last</div>
+      <div>W onion · ⌘Z/⌘Y undo/redo</div>
     </div>
   </div>
 </div>

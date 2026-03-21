@@ -7,21 +7,34 @@ export function createSketch(engine: PixelEngine) {
 
     function ps() { return E.pixelSize; }
 
-    function cell(x: number, y: number) {
-      const s = ps() - E.gap, ox = x * ps() + E.gap / 2, oy = y * ps() + E.gap / 2;
+    function cell(x: number, y: number, alpha = 255) {
+      const s = ps() - E.gap;
+      const ox = x * ps() + E.gap / 2;
+      const oy = y * ps() + E.gap / 2;
       switch (E.cellShape) {
-        case 'square': p.rect(ox, oy, s, s); break;
-        case 'circle': p.ellipse(ox + s / 2, oy + s / 2, s, s); break;
-        case 'triangle': p.triangle(ox + s / 2, oy, ox + s, oy + s, ox, oy + s); break;
-        case 'h-stripes': for (let i = 0; i < 3; i++) p.rect(ox, oy + i * (s / 3) + 1, s, s / 3 - 2); break;
-        case 'v-stripes': for (let i = 0; i < 3; i++) p.rect(ox + i * (s / 3) + 1, oy, s / 3 - 2, s); break;
-        case 'd-stripes':
+        case 'square':    p.rect(ox, oy, s, s); break;
+        case 'circle':    p.ellipse(ox + s / 2, oy + s / 2, s, s); break;
+        case 'triangle':  p.triangle(ox + s / 2, oy, ox + s, oy + s, ox, oy + s); break;
+        case 'h-stripes':
+          for (let i = 0; i < 3; i++) p.rect(ox, oy + i * (s / 3) + 1, s, s / 3 - 2);
+          break;
+        case 'v-stripes':
+          for (let i = 0; i < 3; i++) p.rect(ox + i * (s / 3) + 1, oy, s / 3 - 2, s);
+          break;
+        case 'd-stripes': {
           const ctx = (p as any).drawingContext as CanvasRenderingContext2D;
-          ctx.save(); ctx.beginPath(); ctx.rect(ox, oy, s, s); ctx.clip();
-          ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-          for (let i = -s; i < s * 2; i += 4) { ctx.beginPath(); ctx.moveTo(ox + i, oy); ctx.lineTo(ox + i + s, oy + s); ctx.stroke(); }
+          ctx.save();
+          ctx.beginPath(); ctx.rect(ox, oy, s, s); ctx.clip();
+          // Use current p5 fill color
+          const fc = (p as any)._renderer.states?.fillColor;
+          ctx.strokeStyle = fc ? `rgba(${p.red(fc)},${p.green(fc)},${p.blue(fc)},${alpha / 255})` : `rgba(255,255,255,${alpha / 255})`;
+          ctx.lineWidth = 1.5;
+          for (let i = -s; i < s * 2; i += 4) {
+            ctx.beginPath(); ctx.moveTo(ox + i, oy); ctx.lineTo(ox + i + s, oy + s); ctx.stroke();
+          }
           ctx.restore();
           break;
+        }
       }
     }
 
@@ -29,7 +42,7 @@ export function createSketch(engine: PixelEngine) {
       p.fill(r, g, b, a);
       for (let y = 0; y < E.gridSize; y++)
         for (let x = 0; x < E.gridSize; x++)
-          if (frameData[y]?.[x]) cell(x, y);
+          if (frameData[y]?.[x]) cell(x, y, a);
     }
 
     function coord() {
@@ -45,7 +58,7 @@ export function createSketch(engine: PixelEngine) {
     p.draw = () => {
       p.background(14);
 
-      // Grid
+      // Grid (empty cells)
       p.fill(30);
       for (let y = 0; y < E.gridSize; y++)
         for (let x = 0; x < E.gridSize; x++)
@@ -78,13 +91,20 @@ export function createSketch(engine: PixelEngine) {
         if (E.activeTool === 'rectangle') {
           const [mnX, mxX] = [Math.min(x1, x2), Math.max(x1, x2)];
           const [mnY, mxY] = [Math.min(y1, y2), Math.max(y1, y2)];
-          for (let y = mnY; y <= mxY; y++) for (let x = mnX; x <= mxX; x++)
-            if (x === mnX || x === mxX || y === mnY || y === mxY) cell(x, y);
+          for (let y = mnY; y <= mxY; y++)
+            for (let x = mnX; x <= mxX; x++)
+              if (x === mnX || x === mxX || y === mnY || y === mxY) cell(x, y);
         } else if (E.activeTool === 'line') {
           let lx = x1, ly = y1;
           const dx = Math.abs(x2 - lx), dy = Math.abs(y2 - ly), sx = lx < x2 ? 1 : -1, sy = ly < y2 ? 1 : -1;
           let err = dx - dy;
-          while (true) { cell(lx, ly); if (lx === x2 && ly === y2) break; const e2 = 2 * err; if (e2 > -dy) { err -= dy; lx += sx; } if (e2 < dx) { err += dx; ly += sy; } }
+          while (true) {
+            cell(lx, ly);
+            if (lx === x2 && ly === y2) break;
+            const e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; lx += sx; }
+            if (e2 < dx) { err += dx; ly += sy; }
+          }
         } else {
           const r = Math.round(Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2));
           let cx = r, cy = 0, er = 0;
@@ -92,7 +112,8 @@ export function createSketch(engine: PixelEngine) {
             [[x1+cx,y1+cy],[x1+cy,y1+cx],[x1-cy,y1+cx],[x1-cx,y1+cy],
              [x1-cx,y1-cy],[x1-cy,y1-cx],[x1+cy,y1-cx],[x1+cx,y1-cy]]
             .forEach(([px, py]) => cell(px, py));
-            if (er <= 0) { cy++; er += 2 * cy + 1; } if (er > 0) { cx--; er -= 2 * cx + 1; }
+            if (er <= 0) { cy++; er += 2 * cy + 1; }
+            if (er > 0) { cx--; er -= 2 * cx + 1; }
           }
         }
       }

@@ -8,6 +8,7 @@ export const SHAPE_LABELS: Record<CellShape, string> = { square: '■', circle: 
 
 const STORAGE_KEY = 'pixatron-state';
 const CANVAS_SIZE = 480;
+const MAX_UNDO = 50;
 
 export class PixelEngine {
   frames: boolean[][][] = [];
@@ -27,9 +28,15 @@ export class PixelEngine {
   drawEnd = { x: 0, y: 0 };
   pencilMode = true;
 
+  // undo/redo stacks — each entry is a snapshot of frames + currentFrame
+  private undoStack: Array<{ frames: boolean[][][], currentFrame: number }> = [];
+  private redoStack: Array<{ frames: boolean[][][], currentFrame: number }> = [];
+
   get canvasSize() { return CANVAS_SIZE; }
   get pixelSize() { return Math.max(4, Math.floor((CANVAS_SIZE - this.gap) / this.gridSize)); }
   get frame() { return this.frames[this.currentFrame]; }
+  get canUndo() { return this.undoStack.length > 0; }
+  get canRedo() { return this.redoStack.length > 0; }
 
   constructor() {
     this.load();
@@ -38,6 +45,34 @@ export class PixelEngine {
 
   emptyFrame(): boolean[][] {
     return Array.from({ length: this.gridSize }, () => Array(this.gridSize).fill(false));
+  }
+
+  private cloneFrames(): boolean[][][] {
+    return this.frames.map(f => f.map(r => [...r]));
+  }
+
+  pushUndo() {
+    this.undoStack.push({ frames: this.cloneFrames(), currentFrame: this.currentFrame });
+    if (this.undoStack.length > MAX_UNDO) this.undoStack.shift();
+    this.redoStack = [];
+  }
+
+  undo() {
+    if (!this.undoStack.length) return;
+    this.redoStack.push({ frames: this.cloneFrames(), currentFrame: this.currentFrame });
+    const s = this.undoStack.pop()!;
+    this.frames = s.frames;
+    this.currentFrame = s.currentFrame;
+    this.save();
+  }
+
+  redo() {
+    if (!this.redoStack.length) return;
+    this.undoStack.push({ frames: this.cloneFrames(), currentFrame: this.currentFrame });
+    const s = this.redoStack.pop()!;
+    this.frames = s.frames;
+    this.currentFrame = s.currentFrame;
+    this.save();
   }
 
   // ── Pixel ops ──
@@ -92,14 +127,28 @@ export class PixelEngine {
     }
   }
 
+  drawDiagonalStripes(p: any, ox: number, oy: number, size: number) {
+    const ctx = p.drawingContext as CanvasRenderingContext2D;
+    const fillColor = (p as any)._renderer.states?.fillColor ?? '#fff';
+    ctx.save();
+    ctx.beginPath(); ctx.rect(ox, oy, size, size); ctx.clip();
+    ctx.strokeStyle = fillColor;
+    ctx.lineWidth = 1;
+    for (let i = -size; i < size * 2; i += 4) {
+      ctx.beginPath(); ctx.moveTo(ox + i, oy); ctx.lineTo(ox + i + size, oy + size); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   // ── Frame ops ──
-  addFrame() { this.frames.splice(this.currentFrame + 1, 0, this.emptyFrame()); this.currentFrame++; this.save(); }
-  copyFrame() { this.frames.splice(this.currentFrame + 1, 0, this.frame.map(r => [...r])); this.currentFrame++; this.save(); }
-  deleteFrame() { if (this.frames.length <= 1) return; this.frames.splice(this.currentFrame, 1); if (this.currentFrame >= this.frames.length) this.currentFrame--; this.save(); }
-  clearFrame() { this.frames[this.currentFrame] = this.emptyFrame(); this.save(); }
-  invertFrame() { this.frames[this.currentFrame] = this.frame.map(r => r.map(v => !v)); this.save(); }
+  addFrame() { this.pushUndo(); this.frames.splice(this.currentFrame + 1, 0, this.emptyFrame()); this.currentFrame++; this.save(); }
+  copyFrame() { this.pushUndo(); this.frames.splice(this.currentFrame + 1, 0, this.frame.map(r => [...r])); this.currentFrame++; this.save(); }
+  deleteFrame() { if (this.frames.length <= 1) return; this.pushUndo(); this.frames.splice(this.currentFrame, 1); if (this.currentFrame >= this.frames.length) this.currentFrame--; this.save(); }
+  clearFrame() { this.pushUndo(); this.frames[this.currentFrame] = this.emptyFrame(); this.save(); }
+  invertFrame() { this.pushUndo(); this.frames[this.currentFrame] = this.frame.map(r => r.map(v => !v)); this.save(); }
 
   movePixels(dx: number, dy: number) {
+    this.pushUndo();
     const f = this.frame, nf = this.emptyFrame();
     for (let y = 0; y < this.gridSize; y++)
       for (let x = 0; x < this.gridSize; x++)
@@ -113,6 +162,8 @@ export class PixelEngine {
 
   goPrev() { if (this.currentFrame > 0) this.currentFrame--; }
   goNext() { if (this.currentFrame >= this.frames.length - 1) this.addFrame(); else this.currentFrame++; }
+  goFirst() { this.currentFrame = 0; }
+  goLast() { this.currentFrame = this.frames.length - 1; }
   goNextLoop() { this.currentFrame = (this.currentFrame + 1) % this.frames.length; }
 
   cycleTool(dir: 1 | -1) {
@@ -120,14 +171,52 @@ export class PixelEngine {
     this.activeTool = TOOLS[(i + dir + TOOLS.length) % TOOLS.length];
   }
 
-  // ── Mouse handlers (called by p5) ──
+  // ── Export ──
+  exportPNG(p: any): void {
+    p.save('pixatron-frame-' + (this.currentFrame + 1) + '.png');
+  }
+
+  exportGIF(_frames: boolean[][][], _gridSize: number, _pixelSize: number): void {
+    // placeholder — GIF export would require a GIF encoder library
+    alert('GIF export coming soon!');
+  }
+
+  exportSpriteSheet(p5Instance: any): void {
+    const ps = this.pixelSize;
+    const cols = this.frames.length;
+    const sheet = document.createElement('canvas');
+    sheet.width = CANVAS_SIZE * cols;
+    sheet.height = CANVAS_SIZE;
+    const ctx = sheet.getContext('2d')!;
+    // render each frame to sheet
+    for (let fi = 0; fi < this.frames.length; fi++) {
+      const f = this.frames[fi];
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(fi * CANVAS_SIZE, 0, CANVAS_SIZE, CANVAS_SIZE);
+      ctx.fillStyle = '#ffffff';
+      for (let y = 0; y < this.gridSize; y++)
+        for (let x = 0; x < this.gridSize; x++)
+          if (f[y]?.[x]) {
+            const size = ps - this.gap;
+            ctx.fillRect(fi * CANVAS_SIZE + x * ps + this.gap / 2, y * ps + this.gap / 2, size, size);
+          }
+    }
+    const a = document.createElement('a');
+    a.href = sheet.toDataURL('image/png');
+    a.download = 'pixatron-spritesheet.png';
+    a.click();
+  }
+
+  // ── Mouse handlers ──
   onMouseDown(x: number, y: number) {
     if (x < 0 || x >= this.gridSize || y < 0 || y >= this.gridSize) return;
     if (this.activeTool === 'pencil') {
+      this.pushUndo();
       this.pencilMode = !this.frame[y]?.[x];
       this.setPixel(x, y, this.pencilMode);
       this.save();
     } else if (this.activeTool === 'fill') {
+      this.pushUndo();
       this.floodFill(x, y);
       this.save();
     } else {
@@ -151,6 +240,7 @@ export class PixelEngine {
 
   onMouseUp() {
     if (!this.isDrawing) return;
+    this.pushUndo();
     const { x: x1, y: y1 } = this.drawStart, { x: x2, y: y2 } = this.drawEnd;
     if (this.activeTool === 'rectangle') this.drawRect(x1, y1, x2, y2);
     else if (this.activeTool === 'line') this.drawLine(x1, y1, x2, y2);

@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PixelEngine, TOOLS, SHAPES, TOOL_LABELS, SHAPE_LABELS, type Tool, type CellShape } from './pixel-engine';
@@ -18,12 +18,16 @@ export class App implements OnInit {
   TOOL_LABELS = TOOL_LABELS;
   SHAPE_LABELS = SHAPE_LABELS;
 
+  private p5Instance: any = null;
+
   @ViewChild('canvasContainer', { static: true }) canvasRef!: ElementRef<HTMLDivElement>;
+
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     import('p5').then(p5Module => {
       const P5 = p5Module.default;
-      new P5(createSketch(this.E), this.canvasRef.nativeElement);
+      this.p5Instance = new P5(createSketch(this.E), this.canvasRef.nativeElement);
     });
   }
 
@@ -31,18 +35,28 @@ export class App implements OnInit {
   onKey(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    console.log('KEY:', e.code, e.key, e.keyCode);
-    const c = e.code;
-    if (c === 'Space') { this.E.isPlaying = !this.E.isPlaying; }
-    else if (c === 'ArrowLeft' || c === 'KeyA') { this.E.goPrev(); }
-    else if (c === 'ArrowRight' || c === 'KeyD') { this.E.goNext(); }
-    else if (c === 'KeyW') { this.E.onionSkin = !this.E.onionSkin; this.E.save(); }
-    else if (c === 'KeyE') { this.E.cycleTool(1); }
-    else if (c === 'KeyQ') { this.E.cycleTool(-1); }
-    else if (c === 'Delete' || c === 'Backspace') { this.E.deleteFrame(); }
+
+    // Use key (not code) — works regardless of layout/shift
+    const key = e.key;
+
+    // Shift+Q = first frame, Shift+E = last frame
+    if (key === 'Q') { this.E.goFirst(); }
+    else if (key === 'E' && e.shiftKey) { this.E.goLast(); }
+    // Regular Q/E = cycle tools (no shift)
+    else if (key === 'q') { this.E.cycleTool(-1); }
+    else if (key === 'e') { this.E.cycleTool(1); }
+    else if (key === 'w' || key === 'W') { this.E.onionSkin = !this.E.onionSkin; this.E.save(); }
+    else if (key === ' ') { this.E.isPlaying = !this.E.isPlaying; }
+    else if (key === 'ArrowLeft' || key === 'a' || key === 'A') { this.E.goPrev(); }
+    else if (key === 'ArrowRight' || key === 'd' || key === 'D') { this.E.goNext(); }
+    else if (key === 'Delete' || key === 'Backspace') { this.E.deleteFrame(); }
+    else if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { this.E.undo(); }
+    else if ((e.metaKey || e.ctrlKey) && (key === 'y' || (key === 'z' && e.shiftKey))) { this.E.redo(); }
     else { return; }
+
     e.preventDefault();
     e.stopPropagation();
+    this.cdr.detectChanges();
   }
 
   setGrid(e: Event) { this.E.gridSize = +(e.target as HTMLInputElement).value; this.E.save(); }
@@ -53,4 +67,7 @@ export class App implements OnInit {
   setTool(t: Tool) { this.E.activeTool = t; }
   setShape(s: CellShape) { this.E.cellShape = s; this.E.save(); }
   selectFrame(i: number) { this.E.currentFrame = i; }
+
+  exportFrame() { if (this.p5Instance) this.E.exportPNG(this.p5Instance); }
+  exportSheet() { this.E.exportSpriteSheet(this.p5Instance); }
 }
