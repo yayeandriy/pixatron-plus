@@ -25,9 +25,9 @@ function renderFrameToCanvas(engine: PixelEngine, frameIndex: number, scale = 4)
   const g  = scale > 1 ? Math.round(gap * scale / engine.pixelSize) : 0;
   const size = gridSize * ps;               // total canvas size
 
-  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent);
-  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent);
-  const gapColor    = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent);
+  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? engine.cellFillColor  ?? '#ffffff';
+  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? engine.cellEmptyColor ?? null;
+  const gapColor    = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? engine.pageBg         ?? null;
 
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
@@ -120,9 +120,9 @@ export function exportSVG(engine: PixelEngine) {
   const { gridSize, gap, pixelSize, cellShape, canvasSize } = engine;
   const f = engine.frame, ps = pixelSize;
 
-  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? 'none';
-  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? 'none';
-  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? 'none';
+  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? engine.cellFillColor  ?? '#ffffff';
+  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? engine.cellEmptyColor ?? 'none';
+  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? engine.pageBg         ?? 'none';
 
   let shapes = '';
   for (let y = 0; y < gridSize; y++)
@@ -297,9 +297,10 @@ export function exportHTML(engine: PixelEngine) {
   const dispSize = gridSize * scale;
   const variant  = engine.cellVariant || engine.cellShape;
 
-  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? 'transparent';
-  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? 'transparent';
-  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? 'transparent';
+  // Use export colors, fall back to canvas colors if transparent/unset
+  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? engine.cellFillColor  ?? '#ffffff';
+  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? engine.cellEmptyColor ?? 'transparent';
+  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? engine.pageBg         ?? 'transparent';
 
   // Each frame SVG: 1 unit per cell, browser scales via CSS
   const svgFrames = engine.frames.map(f => {
