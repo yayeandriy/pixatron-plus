@@ -1,0 +1,1 @@
+declare module 'omggif' { export class GifWriter { constructor(buf: Uint8Array, w: number, h: number, opts?: any); addFrame(x:number,y:number,w:number,h:number,indexed:Uint8Array,opts?:any):void; end():number; } }

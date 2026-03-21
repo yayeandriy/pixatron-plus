@@ -166,54 +166,87 @@ function cellToSVG(shape: string, ox: number, oy: number, s: number): string {
 // ── GIF ───────────────────────────────────────────────────────────────────────
 
 export async function exportGIF(engine: PixelEngine) {
-  const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
-  const scale = engine.exportScale || 4;
-  const delay = Math.round(1000 / engine.fps);
-  const loopCount = engine.exportLoop ? 0 : 1;
+  const { GifWriter } = await import('omggif');
+  const scale   = engine.exportScale || 4;
+  const delay   = Math.round(100 / engine.fps); // GIF delay in 1/100s units
+  const loop    = engine.exportLoop ? 0 : -1;   // 0 = infinite, -1 = no loop
 
-  const gif = GIFEncoder();
+  const { gridSize, gap, pixelSize, cellVariant, cellShape } = engine;
+  const ps    = scale;
+  const g     = scale > 1 ? Math.round(gap * scale / pixelSize) : 0;
+  const size  = gridSize * ps;
+  const shape = cellVariant || cellShape;
 
-  // Solid colors for GIF (no transparency)
-  const gifBg    = engine.exportGapColor    || engine.pageBg        || '#000000';
-  const gifFill  = engine.exportFilledColor || engine.cellFillColor || '#ffffff';
-  const gifEmpty = engine.exportEmptyColor  || engine.cellEmptyColor|| '#1e1e1e';
+  // Resolve colors — always opaque for GIF
+  const bgColor   = engine.exportGapColor    || engine.pageBg        || '#000000';
+  const fillColor = engine.exportFilledColor || engine.cellFillColor || '#ffffff';
+  const emptyColor= engine.exportEmptyColor  || engine.cellEmptyColor|| '#1e1e1e';
 
-  for (let i = 0; i < engine.frames.length; i++) {
-    const { gridSize, gap, pixelSize } = engine;
-    const ps = scale;
-    const g  = scale > 1 ? Math.round(gap * scale / pixelSize) : 0;
-    const size = gridSize * ps;
-    const f = engine.frames[i];
-    const shape = engine.cellVariant || engine.cellShape;
+  function hexToRgb(hex: string): [number,number,number] {
+    const n = parseInt(hex.replace('#',''), 16);
+    return [(n>>16)&255, (n>>8)&255, n&255];
+  }
 
+  const [br,bg,bb] = hexToRgb(bgColor);
+  const [fr,fg,fb] = hexToRgb(fillColor);
+  const [er,eg,eb] = hexToRgb(emptyColor);
+
+  // Build a palette from the unique colors used
+  const palette: number[] = [
+    (br<<16)|(bg<<8)|bb,
+    (fr<<16)|(fg<<8)|fb,
+    (er<<16)|(eg<<8)|eb,
+    0x000000, // pad to at least 4
+  ];
+  // Remove duplicates keeping order
+  const uniquePalette = [...new Set(palette)];
+  // Pad to power of 2 (GIF requirement)
+  while (uniquePalette.length < 4 || (uniquePalette.length & (uniquePalette.length-1)) !== 0)
+    uniquePalette.push(0);
+
+  const bgIdx   = uniquePalette.indexOf((br<<16)|(bg<<8)|bb);
+  const fillIdx = uniquePalette.indexOf((fr<<16)|(fg<<8)|fb);
+  const emptyIdx= uniquePalette.indexOf((er<<16)|(eg<<8)|eb);
+
+  // Render each frame using canvas, map pixels to palette indices
+  const bufSize = 1024 * 1024 * 4;
+  const buf = new Uint8Array(bufSize);
+  const gw = new GifWriter(buf, size, size, { loop });
+
+  for (let fi = 0; fi < engine.frames.length; fi++) {
     const c = document.createElement('canvas');
     c.width = size; c.height = size;
     const ctx = c.getContext('2d')!;
 
-    ctx.fillStyle = gifBg;
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, size, size);
 
+    const f = engine.frames[fi];
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
-        ctx.fillStyle = f?.[y]?.[x] ? gifFill : gifEmpty;
+        ctx.fillStyle = f?.[y]?.[x] ? fillColor : emptyColor;
         const ox = x * ps + g / 2, oy = y * ps + g / 2, s = ps - g;
         drawCell(ctx, shape, ox, oy, s);
       }
     }
 
-    const data = ctx.getImageData(0, 0, size, size).data;
-    const pixels = size * size;
-    const rgb = new Uint8Array(pixels * 3);
-    for (let j = 0; j < pixels; j++) {
-      rgb[j*3] = data[j*4]; rgb[j*3+1] = data[j*4+1]; rgb[j*3+2] = data[j*4+2];
+    const imageData = ctx.getImageData(0, 0, size, size).data;
+    const indexed = new Uint8Array(size * size);
+    for (let j = 0; j < size * size; j++) {
+      const r = imageData[j*4], g2 = imageData[j*4+1], b = imageData[j*4+2];
+      const color = (r<<16)|(g2<<8)|b;
+      const idx = uniquePalette.indexOf(color);
+      indexed[j] = idx >= 0 ? idx : bgIdx;
     }
-    const palette = quantize(rgb, 256);
-    const indexed = applyPalette(rgb, palette);
-    gif.writeFrame(indexed, size, size, { palette, delay, repeat: loopCount });
+
+    gw.addFrame(0, 0, size, size, indexed, {
+      palette: uniquePalette,
+      delay,
+    });
   }
 
-  gif.finish();
-  download(new Blob([gif.bytes()], { type: 'image/gif' }), 'pixatron.gif');
+  const bytes = buf.slice(0, gw.end());
+  download(new Blob([bytes], { type: 'image/gif' }), 'pixatron.gif');
 }
 
 // ── Video (WebM) ──────────────────────────────────────────────────────────────
