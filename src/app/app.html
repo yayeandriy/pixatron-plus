@@ -120,8 +120,18 @@
       <input type="range" [value]="E.gridSize" (input)="setGrid($event)" min="4" max="64" step="4" style="width:100%;margin-bottom:8px;" />
       <div class="slider-row"><span>gap</span><span class="slider-val">{{ E.gap }}px</span></div>
       <input type="range" [value]="E.gap" (input)="setGap($event)" min="0" max="6" step="1" style="width:100%;margin-bottom:8px;" />
-      <div class="color-row">
-        <span class="color-label" style="color:#777;">page bg</span>
+      <div class="color-row" style="margin-top:4px;">
+        <span class="color-label">cell fill</span>
+        <input type="color" [value]="E.cellFillColor" (input)="setCellFill($event)" class="color-input" />
+        <span class="color-val">{{ E.cellFillColor }}</span>
+      </div>
+      <div class="color-row" style="margin-top:4px;">
+        <span class="color-label">cell empty</span>
+        <input type="color" [value]="E.cellEmptyColor" (input)="setCellEmpty($event)" class="color-input" />
+        <span class="color-val">{{ E.cellEmptyColor }}</span>
+      </div>
+      <div class="color-row" style="margin-top:4px;">
+        <span class="color-label">page bg</span>
         <input type="color" [value]="E.pageBg" (input)="setPageBg($event)" class="color-input" />
         <span class="color-val">{{ E.pageBg }}</span>
       </div>

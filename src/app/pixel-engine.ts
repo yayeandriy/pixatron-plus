@@ -41,6 +41,10 @@ export class PixelEngine {
   // app background
   pageBg = '#0a0a0a';
 
+  // canvas colors
+  cellFillColor = '#ffffff';
+  cellEmptyColor = '#1e1e1e';
+
   // export settings
   exportFilledColor = '#ffffff';
   exportFilledTransparent = false;
@@ -318,6 +322,8 @@ export class PixelEngine {
         onionSkinOpacity: this.onionSkinOpacity,
         activeTool: this.activeTool, isPlaying: this.isPlaying, cellVariant: this.cellVariant,
         pageBg: this.pageBg,
+        cellFillColor: this.cellFillColor,
+        cellEmptyColor: this.cellEmptyColor,
         exportFilledColor: this.exportFilledColor,
         exportFilledTransparent: this.exportFilledTransparent,
         exportEmptyColor: this.exportEmptyColor,
@@ -345,6 +351,8 @@ export class PixelEngine {
       this.isPlaying = d.isPlaying || false;
       this.cellVariant = d.cellVariant || SHAPE_VARIANTS[this.cellShape as CellShape][0];
       this.pageBg = d.pageBg || '#0a0a0a';
+      this.cellFillColor = d.cellFillColor || '#ffffff';
+      this.cellEmptyColor = d.cellEmptyColor || '#1e1e1e';
       this.exportFilledColor = d.exportFilledColor || '#ffffff';
       this.exportFilledTransparent = d.exportFilledTransparent || false;
       this.exportEmptyColor = d.exportEmptyColor || '#0e0e0e';

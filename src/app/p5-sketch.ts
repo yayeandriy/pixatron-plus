@@ -63,7 +63,7 @@ export function createSketch(engine: PixelEngine) {
       p.background(E.pageBg || '#0e0e0e');
 
       // Grid (empty cells)
-      p.fill(30);
+      p.fill(E.cellEmptyColor || '#1e1e1e');
       for (let y = 0; y < E.gridSize; y++)
         for (let x = 0; x < E.gridSize; x++)
           cell(x, y);
@@ -79,10 +79,10 @@ export function createSketch(engine: PixelEngine) {
         if (next) drawFrameCells(next, 80, 100, 255, E.onionSkinOpacity * 2.55);
       }
 
-      // Current frame — white
+      // Current frame
       const f = E.frame;
       if (f) {
-        p.fill(255);
+        p.fill(E.cellFillColor || '#ffffff');
         for (let y = 0; y < E.gridSize; y++)
           for (let x = 0; x < E.gridSize; x++)
             if (f[y]?.[x]) cell(x, y);

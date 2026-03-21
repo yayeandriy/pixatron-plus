@@ -71,6 +71,9 @@ export class App implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  setCellFill(e: Event) { this.E.cellFillColor = (e.target as HTMLInputElement).value; this.E.save(); }
+  setCellEmpty(e: Event) { this.E.cellEmptyColor = (e.target as HTMLInputElement).value; this.E.save(); }
+
   setPageBg(e: Event) {
     this.E.pageBg = (e.target as HTMLInputElement).value;
     this.applyPageBg();
