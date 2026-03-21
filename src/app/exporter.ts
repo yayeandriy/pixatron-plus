@@ -347,6 +347,7 @@ export function exportHTML(engine: PixelEngine) {
   ].join('\n');
 
     downloadText(html, 'pixatron.html', 'text/html');
+  navigator.clipboard?.writeText(html).catch(() => {});
 }
 
 // ── Glyph (Unicode block art) ─────────────────────────────────────────────────

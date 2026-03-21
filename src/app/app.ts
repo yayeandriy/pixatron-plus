@@ -191,7 +191,7 @@ export class App implements OnInit, OnDestroy {
         case 'html':  exportHTML(this.E); break;
         case 'glyph': exportGlyph(this.E); break;
       }
-      this.exportStatus = type === 'glyph' ? '✓ Copied + downloaded' : '✓ Done!';
+      this.exportStatus = (type === 'glyph' || type === 'html') ? '✓ Copied to clipboard + downloaded' : '✓ Done!';
       setTimeout(() => { this.exportStatus = ''; this.exportOpen = false; this.E.blockInput = false; this.cdr.detectChanges(); }, 1500);
     } catch (err: any) {
       this.exportStatus = '✗ ' + (err?.message ?? err);
