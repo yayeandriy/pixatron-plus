@@ -309,8 +309,9 @@ export function exportHTML(engine: PixelEngine) {
       for (let x = 0; x < gridSize; x++) {
         const color = f[y]?.[x] ? filledColor : emptyColor;
         if (!color || color === 'transparent') continue;
-        const s = Math.max(0, 1 - gap);
-        const ox = x + gap / 2, oy = y + gap / 2;
+        // At 1-unit-per-cell, no gap — gap is a visual canvas concern only
+        const s = 1;
+        const ox = x, oy = y;
         shapes += '<g fill="' + color + '">' + cellToSVG(variant, ox, oy, s) + '</g>';
       }
     const svg = '<?xml version="1.0" encoding="UTF-8"?>'
