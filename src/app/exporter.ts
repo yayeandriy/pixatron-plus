@@ -25,9 +25,9 @@ function renderFrameToCanvas(engine: PixelEngine, frameIndex: number, scale = 4)
   const g  = scale > 1 ? Math.round(gap * scale / engine.pixelSize) : 0;
   const size = gridSize * ps;               // total canvas size
 
-  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? engine.cellFillColor  ?? '#ffffff';
-  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? engine.cellEmptyColor ?? null;
-  const gapColor    = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? engine.pageBg         ?? null;
+  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent);
+  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent);
+  const gapColor    = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent);
 
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
@@ -120,9 +120,9 @@ export function exportSVG(engine: PixelEngine) {
   const { gridSize, gap, pixelSize, cellShape, canvasSize } = engine;
   const f = engine.frame, ps = pixelSize;
 
-  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? engine.cellFillColor  ?? '#ffffff';
-  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? engine.cellEmptyColor ?? 'none';
-  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? engine.pageBg         ?? 'none';
+  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? 'none';
+  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? 'none';
+  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? 'none';
 
   let shapes = '';
   for (let y = 0; y < gridSize; y++)
@@ -179,9 +179,9 @@ export async function exportGIF(engine: PixelEngine) {
 
   // For GIF: always use explicit export color values (GIF has no alpha channel)
   // transparent flag = ignore, just use whatever color is set in the picker
-  const bgColor    = engine.exportGapColor    || '#000000';
-  const fillColor  = engine.exportFilledColor || '#ffffff';
-  const emptyColor = engine.exportEmptyColor  || '#000000';
+  const bgColor    = engine.exportGapColor;
+  const fillColor  = engine.exportFilledColor;
+  const emptyColor = engine.exportEmptyColor;
 
   function hexToRgb(hex: string): [number,number,number] {
     const n = parseInt(hex.replace('#',''), 16);
@@ -298,9 +298,9 @@ export function exportHTML(engine: PixelEngine) {
   const variant  = engine.cellVariant || engine.cellShape;
 
   // Use export colors, fall back to canvas colors if transparent/unset
-  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? engine.cellFillColor  ?? '#ffffff';
-  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? engine.cellEmptyColor ?? 'transparent';
-  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? engine.pageBg         ?? 'transparent';
+  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? 'transparent';
+  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? 'transparent';
+  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? 'transparent';
 
   // Each frame SVG: 1 unit per cell, browser scales via CSS
   const svgFrames = engine.frames.map(f => {
