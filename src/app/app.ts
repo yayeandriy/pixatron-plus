@@ -69,9 +69,26 @@ export class App implements OnInit {
   setShape(s: CellShape) { this.E.cellShape = s; this.E.save(); }
   selectFrame(i: number) { this.E.currentFrame = i; }
 
-  exportFrame()  { exportPNG(this.E); }
-  exportSheet()  { exportSpriteSheet(this.E); }
-  exportSVG()    { exportSVG(this.E); }
-  exportGIF()    { exportGIF(this.E); }
-  exportVideo()  { exportVideo(this.E); }
+  exportOpen = false;
+  exportStatus = '';
+
+  openExport() { this.exportOpen = true; this.exportStatus = ''; }
+  closeExport() { this.exportOpen = false; }
+
+  async doExport(type: string) {
+    this.exportStatus = 'Exporting…';
+    try {
+      switch (type) {
+        case 'png':   exportPNG(this.E); break;
+        case 'svg':   exportSVG(this.E); break;
+        case 'sheet': exportSpriteSheet(this.E); break;
+        case 'gif':   await exportGIF(this.E); break;
+        case 'video': await exportVideo(this.E); break;
+      }
+      this.exportStatus = '✓ Done!';
+      setTimeout(() => { this.exportStatus = ''; this.exportOpen = false; }, 1200);
+    } catch (e: any) {
+      this.exportStatus = '✗ Error: ' + (e?.message ?? e);
+    }
+  }
 }

@@ -9,8 +9,8 @@
   <div class="sidebar">
 
     <!-- Header -->
-    <div class="sidebar-section">
-      <div style="font-size:13px;font-weight:600;letter-spacing:0.1em;">PIXATRON</div>
+    <div class="sidebar-section" style="background:#0a0a0a;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:0.15em;color:#fff;">PIXATRON</div>
     </div>
 
     <!-- Tools -->
@@ -41,7 +41,7 @@
     <div class="sidebar-section">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:4px;">
         <input type="checkbox" [checked]="E.onionSkin" (change)="toggleOnion()" style="accent-color:#6366f1;width:12px;height:12px;" />
-        <span [style.color]="E.onionSkin?'#e8e8e8':'#444'" style="letter-spacing:0.08em;">ONION <span class="hint-label">W</span></span>
+        <span [style.color]="E.onionSkin?'#fff':'#666'" style="letter-spacing:0.08em;font-size:11px;">ONION SKIN <span class="hint-label">W</span></span>
       </label>
       @if (E.onionSkin) {
         <div class="slider-row"><span>opacity</span><span class="slider-val">{{ E.onionSkinOpacity }}%</span></div>
@@ -84,23 +84,14 @@
     <!-- Export -->
     <div class="sidebar-section">
       <div class="section-label">EXPORT</div>
-      <div class="btn-grid" style="grid-template-columns:repeat(3,1fr)">
-        <button class="btn-op" (click)="exportFrame()" title="Current frame as PNG">PNG</button>
-        <button class="btn-op" (click)="exportSVG()" title="Current frame as SVG">SVG</button>
-        <button class="btn-op" (click)="exportSheet()" title="All frames as sprite sheet">SHEET</button>
-        <button class="btn-op" (click)="exportGIF()" title="Animated GIF" style="grid-column:span 2">GIF</button>
-        <button class="btn-op" (click)="exportVideo()" title="WebM video">MOV</button>
-      </div>
+      <button class="btn-primary" (click)="openExport()">↓ EXPORT…</button>
     </div>
 
     <!-- Animation -->
     <div class="sidebar-section">
       <div class="section-label">ANIM <span class="hint-label">SPC</span></div>
-      <button (click)="E.isPlaying=!E.isPlaying"
-        [style.background]="E.isPlaying?'#1a0a0a':'#0a1a0a'"
-        [style.color]="E.isPlaying?'#fca5a5':'#86efac'"
-        [style.border]="'1px solid '+(E.isPlaying?'#7f1d1d':'#1a2e1a')"
-        style="width:100%;padding:4px;margin-bottom:6px;font-family:inherit;font-size:11px;border-radius:2px;cursor:pointer;">
+      <button (click)="E.isPlaying=!E.isPlaying" class="btn-play"
+        [class.playing]="E.isPlaying">
         {{ E.isPlaying ? '■ STOP' : '▶ PLAY' }}
       </button>
       <div class="slider-row"><span>fps</span><span class="slider-val">{{ E.fps }}</span></div>
@@ -111,27 +102,75 @@
     <div class="sidebar-section" style="flex:1;">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
         <span class="section-label" style="margin:0;">FRAMES <span class="hint-label">←/→</span></span>
-        <span class="hint-label">{{ E.currentFrame + 1 }}/{{ E.frames.length }}</span>
+        <span class="slider-val">{{ E.currentFrame + 1 }}/{{ E.frames.length }}</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
         @for (f of E.frames; track $index; let i = $index) {
           <button class="btn-frame" [class.active]="E.currentFrame===i" (click)="selectFrame(i)">{{ i + 1 }}</button>
         }
-        <button class="btn-frame" (click)="E.addFrame()" style="font-size:14px;">+</button>
+        <button class="btn-frame" (click)="E.addFrame()" style="font-size:14px;color:#999;">+</button>
       </div>
       <div style="display:flex;gap:4px;">
         <button class="btn-op" style="flex:1;" (click)="E.copyFrame()">COPY</button>
         @if (E.frames.length > 1) {
-          <button class="btn-op" style="flex:1;border-color:#3a1a1a;background:#1a0a0a;color:#664444;" (click)="E.deleteFrame()">DEL</button>
+          <button class="btn-op btn-danger" style="flex:1;" (click)="E.deleteFrame()">DEL</button>
         }
       </div>
     </div>
 
     <!-- Hints -->
-    <div style="padding:8px 12px;border-top:1px solid #1e1e1e;color:#2a2a2a;line-height:1.6;">
-      <div>SPC play · ←A →D frames</div>
+    <div class="hints">
+      <div>SPC play · ←/A →/D frames</div>
       <div>Q/E tools · ⇧Q/⇧E first/last</div>
-      <div>W onion · ⌘Z/⌘Y undo/redo</div>
+      <div>W onion · ⌘Z undo · ⌘Y redo</div>
     </div>
   </div>
 </div>
+
+<!-- Export Dialog -->
+@if (exportOpen) {
+  <div class="dialog-backdrop" (click)="closeExport()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <div class="dialog-title">EXPORT</div>
+
+      <div class="dialog-section-label">CURRENT FRAME</div>
+      <div class="dialog-row">
+        <button class="dialog-btn" (click)="doExport('png')">
+          <span class="dialog-btn-icon">🖼</span>
+          <span class="dialog-btn-label">PNG</span>
+          <span class="dialog-btn-desc">Raster image</span>
+        </button>
+        <button class="dialog-btn" (click)="doExport('svg')">
+          <span class="dialog-btn-icon">⬡</span>
+          <span class="dialog-btn-label">SVG</span>
+          <span class="dialog-btn-desc">Vector, scalable</span>
+        </button>
+      </div>
+
+      <div class="dialog-section-label">ALL FRAMES</div>
+      <div class="dialog-row">
+        <button class="dialog-btn" (click)="doExport('sheet')">
+          <span class="dialog-btn-icon">▦</span>
+          <span class="dialog-btn-label">SPRITE SHEET</span>
+          <span class="dialog-btn-desc">Frames side by side</span>
+        </button>
+        <button class="dialog-btn" (click)="doExport('gif')">
+          <span class="dialog-btn-icon">◎</span>
+          <span class="dialog-btn-label">GIF</span>
+          <span class="dialog-btn-desc">Animated at {{ E.fps }} fps</span>
+        </button>
+        <button class="dialog-btn" (click)="doExport('video')">
+          <span class="dialog-btn-icon">▶</span>
+          <span class="dialog-btn-label">VIDEO</span>
+          <span class="dialog-btn-desc">WebM at {{ E.fps }} fps</span>
+        </button>
+      </div>
+
+      @if (exportStatus) {
+        <div class="dialog-status">{{ exportStatus }}</div>
+      }
+
+      <button class="dialog-close" (click)="closeExport()">✕ CLOSE</button>
+    </div>
+  </div>
+}
