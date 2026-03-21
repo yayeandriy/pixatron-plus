@@ -10,7 +10,10 @@
 
     <!-- Header -->
     <div class="sidebar-section" style="background:#0a0a0a;">
-      <div style="font-size:12px;font-weight:700;letter-spacing:0.15em;color:#fff;">PIXATRON</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.15em;color:#fff;">PIXATRON</div>
+        <button class="btn-icon" (click)="togglePreview()" [class.active]="showPreview" title="Actual size preview F2">⊙</button>
+      </div>
     </div>
 
     <!-- Tools -->
@@ -18,9 +21,7 @@
       <div class="section-label">TOOLS <span class="hint-label">Q/E</span></div>
       <div class="btn-grid" style="grid-template-columns:repeat(5,1fr)">
         @for (t of TOOLS; track t) {
-          <button class="btn btn-tool" [class.active]="E.activeTool===t" (click)="setTool(t)">
-            {{ TOOL_LABELS[t] }}
-          </button>
+          <button class="btn btn-tool" [class.active]="E.activeTool===t" (click)="setTool(t)">{{ TOOL_LABELS[t] }}</button>
         }
       </div>
     </div>
@@ -30,9 +31,7 @@
       <div class="section-label">SHAPE</div>
       <div class="btn-grid" style="grid-template-columns:repeat(6,1fr)">
         @for (s of SHAPES; track s) {
-          <button class="btn btn-tool" [class.active]="E.cellShape===s" (click)="setShape(s)" style="font-size:11px;">
-            {{ SHAPE_LABELS[s] }}
-          </button>
+          <button class="btn btn-tool" [class.active]="E.cellShape===s" (click)="setShape(s)" style="font-size:11px;">{{ SHAPE_LABELS[s] }}</button>
         }
       </div>
     </div>
@@ -50,7 +49,7 @@
       }
     </div>
 
-    <!-- Canvas -->
+    <!-- Canvas settings -->
     <div class="sidebar-section">
       <div class="section-label">CANVAS</div>
       <div class="slider-row"><span>grid</span><span class="slider-val">{{ E.gridSize }}×{{ E.gridSize }} · {{ E.pixelSize }}px</span></div>
@@ -83,15 +82,14 @@
 
     <!-- Export -->
     <div class="sidebar-section">
-      <div class="section-label">EXPORT</div>
+      <div class="section-label">EXPORT <span class="hint-label">F3</span></div>
       <button class="btn-primary" (click)="openExport()">↓ EXPORT…</button>
     </div>
 
     <!-- Animation -->
     <div class="sidebar-section">
       <div class="section-label">ANIM <span class="hint-label">SPC</span></div>
-      <button (click)="E.isPlaying=!E.isPlaying" class="btn-play"
-        [class.playing]="E.isPlaying">
+      <button (click)="E.isPlaying=!E.isPlaying" class="btn-play" [class.playing]="E.isPlaying">
         {{ E.isPlaying ? '■ STOP' : '▶ PLAY' }}
       </button>
       <div class="slider-row"><span>fps</span><span class="slider-val">{{ E.fps }}</span></div>
@@ -122,10 +120,26 @@
     <div class="hints">
       <div>SPC play · ←/A →/D frames</div>
       <div>Q/E tools · ⇧Q/⇧E first/last</div>
-      <div>W onion · F3 export · ⌘Z/⌘Y undo</div>
+      <div>W onion · F2 preview · F3 export</div>
     </div>
   </div>
 </div>
+
+<!-- Actual-size preview overlay -->
+@if (showPreview) {
+  <div class="preview-overlay" (click)="togglePreview()">
+    <div class="preview-box" (click)="$event.stopPropagation()">
+      <div class="preview-label">ACTUAL SIZE — {{ E.gridSize }}×{{ E.gridSize }}px <span style="color:#444;">(click outside to close)</span></div>
+      <div class="preview-checkerboard">
+        <img [src]="previewDataUrl" [style.width.px]="E.gridSize" [style.height.px]="E.gridSize"
+             style="image-rendering:pixelated;display:block;" />
+      </div>
+      <div class="preview-label" style="margin-top:8px;color:#444;">Zoomed ×8</div>
+      <img [src]="previewDataUrl" [style.width.px]="E.gridSize*8" [style.height.px]="E.gridSize*8"
+           style="image-rendering:pixelated;display:block;margin-top:4px;" />
+    </div>
+  </div>
+}
 
 <!-- Export Dialog -->
 @if (exportOpen) {
@@ -133,7 +147,44 @@
     <div class="dialog" (click)="$event.stopPropagation()">
       <div class="dialog-title">EXPORT</div>
 
-      <div class="dialog-section-label">CURRENT FRAME</div>
+      <!-- Color settings -->
+      <div class="dialog-section-label">COLOR SETTINGS</div>
+      <div class="color-grid">
+        <div class="color-row">
+          <span class="color-label">Filled</span>
+          @if (!E.exportFilledTransparent) {
+            <input type="color" [(ngModel)]="E.exportFilledColor" (change)="E.save()" class="color-input" />
+            <span class="color-val">{{ E.exportFilledColor }}</span>
+          }
+          <label class="transp-label"><input type="checkbox" [(ngModel)]="E.exportFilledTransparent" (change)="E.save()" /> transp.</label>
+        </div>
+        <div class="color-row">
+          <span class="color-label">Empty</span>
+          @if (!E.exportEmptyTransparent) {
+            <input type="color" [(ngModel)]="E.exportEmptyColor" (change)="E.save()" class="color-input" />
+            <span class="color-val">{{ E.exportEmptyColor }}</span>
+          }
+          <label class="transp-label"><input type="checkbox" [(ngModel)]="E.exportEmptyTransparent" (change)="E.save()" /> transp.</label>
+        </div>
+        <div class="color-row">
+          <span class="color-label">Gap / BG</span>
+          @if (!E.exportGapTransparent) {
+            <input type="color" [(ngModel)]="E.exportGapColor" (change)="E.save()" class="color-input" />
+            <span class="color-val">{{ E.exportGapColor }}</span>
+          }
+          <label class="transp-label"><input type="checkbox" [(ngModel)]="E.exportGapTransparent" (change)="E.save()" /> transp.</label>
+        </div>
+      </div>
+
+      <!-- Loop option -->
+      <div class="dialog-section-label" style="margin-top:12px;">ANIMATION</div>
+      <label class="transp-label" style="font-size:11px;gap:8px;">
+        <input type="checkbox" [(ngModel)]="E.exportLoop" (change)="E.save()" style="accent-color:#6366f1;" />
+        Loop (applies to GIF and video)
+      </label>
+
+      <!-- Current frame exports -->
+      <div class="dialog-section-label" style="margin-top:12px;">CURRENT FRAME</div>
       <div class="dialog-row">
         <button class="dialog-btn" (click)="doExport('png')">
           <span class="dialog-btn-icon">🖼</span>
@@ -143,52 +194,38 @@
         <button class="dialog-btn" (click)="doExport('svg')">
           <span class="dialog-btn-icon">⬡</span>
           <span class="dialog-btn-label">SVG</span>
-          <span class="dialog-btn-desc">Vector, scalable</span>
+          <span class="dialog-btn-desc">Vector</span>
+        </button>
+        <button class="dialog-btn" (click)="doExport('glyph')">
+          <span class="dialog-btn-icon">▓</span>
+          <span class="dialog-btn-label">GLYPH</span>
+          <span class="dialog-btn-desc">Unicode + clipboard</span>
         </button>
       </div>
 
-      <div class="dialog-section-label">ALL FRAMES</div>
+      <!-- All frames exports -->
+      <div class="dialog-section-label" style="margin-top:12px;">ALL FRAMES</div>
       <div class="dialog-row">
         <button class="dialog-btn" (click)="doExport('sheet')">
           <span class="dialog-btn-icon">▦</span>
-          <span class="dialog-btn-label">SPRITE SHEET</span>
-          <span class="dialog-btn-desc">Frames side by side</span>
+          <span class="dialog-btn-label">SHEET</span>
+          <span class="dialog-btn-desc">Sprite sheet</span>
         </button>
         <button class="dialog-btn" (click)="doExport('gif')">
           <span class="dialog-btn-icon">◎</span>
           <span class="dialog-btn-label">GIF</span>
-          <span class="dialog-btn-desc">Animated at {{ E.fps }} fps</span>
+          <span class="dialog-btn-desc">Animated · {{ E.fps }}fps</span>
         </button>
         <button class="dialog-btn" (click)="doExport('video')">
           <span class="dialog-btn-icon">▶</span>
           <span class="dialog-btn-label">VIDEO</span>
-          <span class="dialog-btn-desc">WebM at {{ E.fps }} fps</span>
+          <span class="dialog-btn-desc">WebM · {{ E.fps }}fps</span>
         </button>
-      </div>
-
-      <div class="dialog-section-label" style="margin-top:16px;">COLOR SETTINGS</div>
-      <div class="color-grid">
-        <div class="color-row">
-          <span class="color-label">Filled cell</span>
-          <input type="color" [(ngModel)]="E.exportFilledColor" (change)="E.save()" class="color-input" />
-          <span class="color-val">{{ E.exportFilledColor }}</span>
-        </div>
-        <div class="color-row">
-          <span class="color-label">Empty cell</span>
-          <input type="color" [(ngModel)]="E.exportEmptyColor" (change)="E.save()" class="color-input" />
-          <span class="color-val">{{ E.exportEmptyColor }}</span>
-        </div>
-        <div class="color-row">
-          <span class="color-label">Gap / BG</span>
-          @if (!E.exportGapTransparent) {
-            <input type="color" [(ngModel)]="E.exportGapColor" (change)="E.save()" class="color-input" />
-            <span class="color-val">{{ E.exportGapColor }}</span>
-          }
-          <label class="transp-label">
-            <input type="checkbox" [(ngModel)]="E.exportGapTransparent" (change)="E.save()" />
-            transparent
-          </label>
-        </div>
+        <button class="dialog-btn" (click)="doExport('html')" style="flex-basis:100%;">
+          <span class="dialog-btn-icon">‹›</span>
+          <span class="dialog-btn-label">HTML SNIPPET</span>
+          <span class="dialog-btn-desc">Drop-in animated embed</span>
+        </button>
       </div>
 
       @if (exportStatus) {

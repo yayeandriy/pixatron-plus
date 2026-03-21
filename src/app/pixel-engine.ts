@@ -24,9 +24,12 @@ export class PixelEngine {
 
   // export settings
   exportFilledColor = '#ffffff';
+  exportFilledTransparent = false;
   exportEmptyColor = '#0e0e0e';
-  exportGapColor = '#0e0e0e';      // '' = transparent
+  exportEmptyTransparent = false;
+  exportGapColor = '#0e0e0e';
   exportGapTransparent = false;
+  exportLoop = true;
 
   // drawing state
   isDrawing = false;
@@ -265,9 +268,12 @@ export class PixelEngine {
         onionSkinOpacity: this.onionSkinOpacity,
         activeTool: this.activeTool, isPlaying: this.isPlaying,
         exportFilledColor: this.exportFilledColor,
+        exportFilledTransparent: this.exportFilledTransparent,
         exportEmptyColor: this.exportEmptyColor,
+        exportEmptyTransparent: this.exportEmptyTransparent,
         exportGapColor: this.exportGapColor,
         exportGapTransparent: this.exportGapTransparent,
+        exportLoop: this.exportLoop,
       }));
     } catch { }
   }
@@ -287,9 +293,12 @@ export class PixelEngine {
       this.activeTool = d.activeTool || 'pencil';
       this.isPlaying = d.isPlaying || false;
       this.exportFilledColor = d.exportFilledColor || '#ffffff';
+      this.exportFilledTransparent = d.exportFilledTransparent || false;
       this.exportEmptyColor = d.exportEmptyColor || '#0e0e0e';
+      this.exportEmptyTransparent = d.exportEmptyTransparent || false;
       this.exportGapColor = d.exportGapColor || '#0e0e0e';
       this.exportGapTransparent = d.exportGapTransparent || false;
+      this.exportLoop = d.exportLoop ?? true;
     } catch { }
   }
 }

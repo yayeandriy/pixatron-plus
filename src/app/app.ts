@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PixelEngine, TOOLS, SHAPES, TOOL_LABELS, SHAPE_LABELS, type Tool, type CellShape } from './pixel-engine';
 import { createSketch } from './p5-sketch';
-import { exportPNG, exportSpriteSheet, exportSVG, exportGIF, exportVideo } from './exporter';
+import { exportPNG, exportSpriteSheet, exportSVG, exportGIF, exportVideo, exportHTML, exportGlyph, renderActualSize } from './exporter';
 
 @Component({
   selector: 'app-root',
@@ -21,6 +21,10 @@ export class App implements OnInit {
 
   private p5Instance: any = null;
 
+  // preview
+  showPreview = false;
+  previewDataUrl = '';
+
   @ViewChild('canvasContainer', { static: true }) canvasRef!: ElementRef<HTMLDivElement>;
 
   constructor(private cdr: ChangeDetectorRef) {}
@@ -37,13 +41,10 @@ export class App implements OnInit {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-    // Use key (not code) — works regardless of layout/shift
     const key = e.key;
 
-    // Shift+Q = first frame, Shift+E = last frame
     if (key === 'Q') { this.E.goFirst(); }
     else if (key === 'E' && e.shiftKey) { this.E.goLast(); }
-    // Regular Q/E = cycle tools (no shift)
     else if (key === 'q') { this.E.cycleTool(-1); }
     else if (key === 'e') { this.E.cycleTool(1); }
     else if (key === 'w' || key === 'W') { this.E.onionSkin = !this.E.onionSkin; this.E.save(); }
@@ -54,6 +55,7 @@ export class App implements OnInit {
     else if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { this.E.undo(); e.preventDefault(); return; }
     else if ((e.metaKey || e.ctrlKey) && (key === 'y' || (key === 'z' && e.shiftKey))) { this.E.redo(); e.preventDefault(); return; }
     else if (e.key === 'F3') { this.openExport(); e.preventDefault(); return; }
+    else if (e.key === 'F2') { this.togglePreview(); e.preventDefault(); return; }
     else { return; }
 
     e.preventDefault();
@@ -69,6 +71,18 @@ export class App implements OnInit {
   setShape(s: CellShape) { this.E.cellShape = s; this.E.save(); }
   selectFrame(i: number) { this.E.currentFrame = i; }
 
+  // ── Preview ──
+  togglePreview() {
+    this.showPreview = !this.showPreview;
+    if (this.showPreview) this.updatePreview();
+  }
+
+  updatePreview() {
+    const c = renderActualSize(this.E, this.E.currentFrame);
+    this.previewDataUrl = c.toDataURL();
+  }
+
+  // ── Export dialog ──
   exportOpen = false;
   exportStatus = '';
 
@@ -77,18 +91,22 @@ export class App implements OnInit {
 
   async doExport(type: string) {
     this.exportStatus = 'Exporting…';
+    this.cdr.detectChanges();
     try {
       switch (type) {
-        case 'png':   exportPNG(this.E); break;
-        case 'svg':   exportSVG(this.E); break;
-        case 'sheet': exportSpriteSheet(this.E); break;
-        case 'gif':   await exportGIF(this.E); break;
-        case 'video': await exportVideo(this.E); break;
+        case 'png':    exportPNG(this.E); break;
+        case 'svg':    exportSVG(this.E); break;
+        case 'sheet':  exportSpriteSheet(this.E); break;
+        case 'gif':    await exportGIF(this.E); break;
+        case 'video':  await exportVideo(this.E); break;
+        case 'html':   exportHTML(this.E); break;
+        case 'glyph':  exportGlyph(this.E); break;
       }
-      this.exportStatus = '✓ Done!';
-      setTimeout(() => { this.exportStatus = ''; this.exportOpen = false; }, 1200);
+      this.exportStatus = type === 'glyph' ? '✓ Copied to clipboard + downloaded' : '✓ Done!';
+      setTimeout(() => { this.exportStatus = ''; this.exportOpen = false; this.cdr.detectChanges(); }, 1500);
     } catch (e: any) {
-      this.exportStatus = '✗ Error: ' + (e?.message ?? e);
+      this.exportStatus = '✗ ' + (e?.message ?? e);
+      this.cdr.detectChanges();
     }
   }
 }

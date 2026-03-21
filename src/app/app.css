@@ -226,6 +226,38 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
 }
 .dialog-close:hover { background: #1a1a1a; color: #aaa; border-color: #444; }
 
+/* Icon button */
+.btn-icon {
+  background: transparent; border: 1px solid #2a2a2a; border-radius: 3px;
+  color: #555; font-size: 14px; cursor: pointer; width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center; transition: all 0.1s;
+}
+.btn-icon:hover { color: #aaa; border-color: #444; }
+.btn-icon.active { color: #a5b4fc; border-color: #6366f1; }
+
+/* Preview overlay */
+.preview-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; backdrop-filter: blur(4px);
+}
+.preview-box {
+  background: #141414; border: 1px solid #2a2a2a; border-radius: 6px;
+  padding: 20px; font-family: 'Geist Mono', monospace;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+}
+.preview-label { font-size: 10px; color: #666; letter-spacing: 0.08em; margin-bottom: 8px; }
+.preview-checkerboard {
+  background-image: linear-gradient(45deg, #333 25%, transparent 25%),
+    linear-gradient(-45deg, #333 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #333 75%),
+    linear-gradient(-45deg, transparent 75%, #333 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  background-color: #222;
+  display: inline-block; padding: 4px;
+}
+
 /* Color settings in dialog */
 .color-grid { display: flex; flex-direction: column; gap: 6px; }
 .color-row { display: flex; align-items: center; gap: 8px; }
