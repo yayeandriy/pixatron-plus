@@ -1,10 +1,26 @@
 export type Tool = 'pencil' | 'rectangle' | 'line' | 'circle' | 'fill';
 export type CellShape = 'square' | 'circle' | 'triangle' | 'h-stripes' | 'v-stripes' | 'd-stripes';
 
+// Variant cycles: clicking a selected shape cycles its variant
+export const SHAPE_VARIANTS: Record<CellShape, string[]> = {
+  'square':    ['square'],
+  'circle':    ['circle'],
+  'triangle':  ['tri-up', 'tri-down', 'tri-left', 'tri-right'],
+  'h-stripes': ['h-stripes'],
+  'v-stripes': ['v-stripes'],
+  'd-stripes': ['d-stripes-tl', 'd-stripes-tr'],
+};
+
 export const TOOLS: Tool[] = ['pencil', 'rectangle', 'line', 'circle', 'fill'];
 export const SHAPES: CellShape[] = ['square', 'circle', 'triangle', 'h-stripes', 'v-stripes', 'd-stripes'];
 export const TOOL_LABELS: Record<Tool, string> = { pencil: 'PEN', rectangle: 'RECT', line: 'LINE', circle: 'CIRC', fill: 'FILL' };
 export const SHAPE_LABELS: Record<CellShape, string> = { square: '■', circle: '●', triangle: '▲', 'h-stripes': '☰', 'v-stripes': '|||', 'd-stripes': '///' };
+export const VARIANT_LABELS: Record<string, string> = {
+  'square': '■', 'circle': '●',
+  'tri-up': '▲', 'tri-down': '▼', 'tri-left': '◀', 'tri-right': '▶',
+  'h-stripes': '☰', 'v-stripes': '|||',
+  'd-stripes-tl': '╲╲', 'd-stripes-tr': '╱╱',
+};
 
 const STORAGE_KEY = 'pixatron-state';
 const CANVAS_SIZE = 480;
@@ -19,6 +35,7 @@ export class PixelEngine {
   isPlaying = false;
   activeTool: Tool = 'pencil';
   cellShape: CellShape = 'square';
+  cellVariant: string = 'square'; // active variant within the shape
   onionSkin = false;
   onionSkinOpacity = 30;
 
@@ -169,6 +186,22 @@ export class PixelEngine {
     this.save();
   }
 
+  reorderFrame(from: number, to: number) {
+    if (from === to) return;
+    this.pushUndo();
+    const [frame] = this.frames.splice(from, 1);
+    this.frames.splice(to, 0, frame);
+    this.currentFrame = to;
+    this.save();
+  }
+
+  insertFrameAt(index: number) {
+    this.pushUndo();
+    this.frames.splice(index, 0, this.emptyFrame());
+    this.currentFrame = index;
+    this.save();
+  }
+
   goPrev() { if (this.currentFrame > 0) this.currentFrame--; }
   goNext() { if (this.currentFrame >= this.frames.length - 1) this.addFrame(); else this.currentFrame++; }
   goFirst() { this.currentFrame = 0; }
@@ -178,6 +211,21 @@ export class PixelEngine {
   cycleTool(dir: 1 | -1) {
     const i = TOOLS.indexOf(this.activeTool);
     this.activeTool = TOOLS[(i + dir + TOOLS.length) % TOOLS.length];
+  }
+
+  selectShape(shape: CellShape) {
+    if (this.cellShape === shape) {
+      // Already selected — cycle variant
+      const variants = SHAPE_VARIANTS[shape];
+      if (variants.length > 1) {
+        const i = variants.indexOf(this.cellVariant);
+        this.cellVariant = variants[(i + 1) % variants.length];
+      }
+    } else {
+      this.cellShape = shape;
+      this.cellVariant = SHAPE_VARIANTS[shape][0];
+    }
+    this.save();
   }
 
   // ── Export ──
@@ -266,7 +314,7 @@ export class PixelEngine {
         gridSize: this.gridSize, gap: this.gap, fps: this.fps,
         cellShape: this.cellShape, onionSkin: this.onionSkin,
         onionSkinOpacity: this.onionSkinOpacity,
-        activeTool: this.activeTool, isPlaying: this.isPlaying,
+        activeTool: this.activeTool, isPlaying: this.isPlaying, cellVariant: this.cellVariant,
         exportFilledColor: this.exportFilledColor,
         exportFilledTransparent: this.exportFilledTransparent,
         exportEmptyColor: this.exportEmptyColor,
@@ -292,6 +340,7 @@ export class PixelEngine {
       this.onionSkinOpacity = d.onionSkinOpacity || 30;
       this.activeTool = d.activeTool || 'pencil';
       this.isPlaying = d.isPlaying || false;
+      this.cellVariant = d.cellVariant || SHAPE_VARIANTS[this.cellShape as CellShape][0];
       this.exportFilledColor = d.exportFilledColor || '#ffffff';
       this.exportFilledTransparent = d.exportFilledTransparent || false;
       this.exportEmptyColor = d.exportEmptyColor || '#0e0e0e';

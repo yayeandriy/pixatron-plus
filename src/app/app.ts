@@ -1,7 +1,7 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, OnDestroy, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PixelEngine, TOOLS, SHAPES, TOOL_LABELS, SHAPE_LABELS, type Tool, type CellShape } from './pixel-engine';
+import { PixelEngine, TOOLS, SHAPES, SHAPE_VARIANTS, TOOL_LABELS, SHAPE_LABELS, VARIANT_LABELS, type Tool, type CellShape } from './pixel-engine';
 import { createSketch } from './p5-sketch';
 import { exportPNG, exportSpriteSheet, exportSVG, exportGIF, exportVideo, exportHTML, exportGlyph, renderActualSize } from './exporter';
 
@@ -12,18 +12,25 @@ import { exportPNG, exportSpriteSheet, exportSVG, exportGIF, exportVideo, export
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   E = new PixelEngine();
   TOOLS = TOOLS;
   SHAPES = SHAPES;
+  SHAPE_VARIANTS = SHAPE_VARIANTS;
   TOOL_LABELS = TOOL_LABELS;
   SHAPE_LABELS = SHAPE_LABELS;
+  VARIANT_LABELS = VARIANT_LABELS;
 
   private p5Instance: any = null;
+  private previewTimer: any = null;
 
-  // preview
+  // preview (inline, exact size, animated)
   showPreview = false;
   previewDataUrl = '';
+
+  // drag/drop frames
+  dragIndex: number | null = null;
+  dragOverIndex: number | null = null;
 
   @ViewChild('canvasContainer', { static: true }) canvasRef!: ElementRef<HTMLDivElement>;
 
@@ -36,13 +43,15 @@ export class App implements OnInit {
     });
   }
 
+  ngOnDestroy() {
+    if (this.previewTimer) clearInterval(this.previewTimer);
+  }
+
   @HostListener('document:keydown', ['$event'])
   onKey(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-
     const key = e.key;
-
     if (key === 'Q') { this.E.goFirst(); }
     else if (key === 'E' && e.shiftKey) { this.E.goLast(); }
     else if (key === 'q') { this.E.cycleTool(-1); }
@@ -57,35 +66,97 @@ export class App implements OnInit {
     else if (e.key === 'F3') { this.openExport(); e.preventDefault(); return; }
     else if (e.key === 'F2') { this.togglePreview(); e.preventDefault(); return; }
     else { return; }
-
     e.preventDefault();
     this.cdr.detectChanges();
   }
 
   setGrid(e: Event) { this.E.gridSize = +(e.target as HTMLInputElement).value; this.E.save(); }
   setGap(e: Event) { this.E.gap = +(e.target as HTMLInputElement).value; this.E.save(); }
-  setFps(e: Event) { this.E.fps = +(e.target as HTMLInputElement).value; this.E.save(); }
+  setFps(e: Event) { this.E.fps = +(e.target as HTMLInputElement).value; this.E.save(); this.restartPreviewAnim(); }
   setOpacity(e: Event) { this.E.onionSkinOpacity = +(e.target as HTMLInputElement).value; this.E.save(); }
   toggleOnion() { this.E.onionSkin = !this.E.onionSkin; this.E.save(); }
   setTool(t: Tool) { this.E.activeTool = t; }
-  setShape(s: CellShape) { this.E.cellShape = s; this.E.save(); }
-  selectFrame(i: number) { this.E.currentFrame = i; }
+  setShape(s: CellShape) { this.E.selectShape(s); }
+  selectFrame(i: number) { this.E.currentFrame = i; if (this.showPreview) this.updatePreview(); }
 
-  // ── Preview ──
-  togglePreview() {
-    this.showPreview = !this.showPreview;
-    if (this.showPreview) this.updatePreview();
+  // ── Shape variant label ──
+  activeVariantLabel(shape: CellShape): string {
+    if (this.E.cellShape !== shape) return this.SHAPE_LABELS[shape];
+    return this.VARIANT_LABELS[this.E.cellVariant] ?? this.SHAPE_LABELS[shape];
   }
 
+  // ── Preview (inline, exact pixel size, animated) ──
+  togglePreview() {
+    this.showPreview = !this.showPreview;
+    if (this.showPreview) {
+      this.updatePreview();
+      this.startPreviewAnim();
+    } else {
+      this.stopPreviewAnim();
+    }
+  }
+
+  private previewFrameIndex = 0;
+
   updatePreview() {
-    const c = renderActualSize(this.E, this.E.currentFrame);
+    const idx = this.E.isPlaying || this.previewTimer
+      ? this.previewFrameIndex
+      : this.E.currentFrame;
+    const c = renderActualSize(this.E, idx);
     this.previewDataUrl = c.toDataURL();
+    this.cdr.detectChanges();
+  }
+
+  startPreviewAnim() {
+    this.stopPreviewAnim();
+    this.previewFrameIndex = this.E.currentFrame;
+    this.previewTimer = setInterval(() => {
+      this.previewFrameIndex = (this.previewFrameIndex + 1) % this.E.frames.length;
+      this.updatePreview();
+    }, 1000 / this.E.fps);
+  }
+
+  stopPreviewAnim() {
+    if (this.previewTimer) { clearInterval(this.previewTimer); this.previewTimer = null; }
+  }
+
+  restartPreviewAnim() {
+    if (this.showPreview) { this.startPreviewAnim(); }
+  }
+
+  // ── Drag/drop frames ──
+  onFrameDragStart(e: DragEvent, i: number) {
+    this.dragIndex = i;
+    e.dataTransfer!.effectAllowed = 'move';
+  }
+
+  onFrameDragOver(e: DragEvent, i: number) {
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = 'move';
+    this.dragOverIndex = i;
+  }
+
+  onFrameDrop(e: DragEvent, i: number) {
+    e.preventDefault();
+    if (this.dragIndex !== null && this.dragIndex !== i) {
+      this.E.reorderFrame(this.dragIndex, i);
+    }
+    this.dragIndex = null;
+    this.dragOverIndex = null;
+  }
+
+  onFrameDragEnd() {
+    this.dragIndex = null;
+    this.dragOverIndex = null;
+  }
+
+  insertBefore(i: number) {
+    this.E.insertFrameAt(i);
   }
 
   // ── Export dialog ──
   exportOpen = false;
   exportStatus = '';
-
   openExport() { this.exportOpen = true; this.exportStatus = ''; }
   closeExport() { this.exportOpen = false; }
 
@@ -94,18 +165,18 @@ export class App implements OnInit {
     this.cdr.detectChanges();
     try {
       switch (type) {
-        case 'png':    exportPNG(this.E); break;
-        case 'svg':    exportSVG(this.E); break;
-        case 'sheet':  exportSpriteSheet(this.E); break;
-        case 'gif':    await exportGIF(this.E); break;
-        case 'video':  await exportVideo(this.E); break;
-        case 'html':   exportHTML(this.E); break;
-        case 'glyph':  exportGlyph(this.E); break;
+        case 'png':   exportPNG(this.E); break;
+        case 'svg':   exportSVG(this.E); break;
+        case 'sheet': exportSpriteSheet(this.E); break;
+        case 'gif':   await exportGIF(this.E); break;
+        case 'video': await exportVideo(this.E); break;
+        case 'html':  exportHTML(this.E); break;
+        case 'glyph': exportGlyph(this.E); break;
       }
-      this.exportStatus = type === 'glyph' ? '✓ Copied to clipboard + downloaded' : '✓ Done!';
+      this.exportStatus = type === 'glyph' ? '✓ Copied + downloaded' : '✓ Done!';
       setTimeout(() => { this.exportStatus = ''; this.exportOpen = false; this.cdr.detectChanges(); }, 1500);
-    } catch (e: any) {
-      this.exportStatus = '✗ ' + (e?.message ?? e);
+    } catch (err: any) {
+      this.exportStatus = '✗ ' + (err?.message ?? err);
       this.cdr.detectChanges();
     }
   }

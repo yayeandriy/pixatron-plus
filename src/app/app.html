@@ -1,7 +1,19 @@
 <div class="main-layout">
 
-  <!-- Canvas -->
+  <!-- Canvas area with inline preview -->
   <div class="canvas-area">
+    <!-- Actual-size preview — top-left corner, exact pixel size -->
+    @if (showPreview) {
+      <div class="preview-inline" (click)="togglePreview()" title="Click to close (F2)">
+        <div class="preview-label">{{ E.gridSize }}×{{ E.gridSize }}px</div>
+        <div class="preview-checkerboard">
+          <img [src]="previewDataUrl"
+               [style.width.px]="E.gridSize"
+               [style.height.px]="E.gridSize"
+               style="image-rendering:pixelated;display:block;" />
+        </div>
+      </div>
+    }
     <div #canvasContainer style="line-height:0;"></div>
   </div>
 
@@ -26,12 +38,17 @@
       </div>
     </div>
 
-    <!-- Cell Shape -->
+    <!-- Cell Shape — clicking selected shape cycles variant -->
     <div class="sidebar-section">
       <div class="section-label">SHAPE</div>
       <div class="btn-grid" style="grid-template-columns:repeat(6,1fr)">
         @for (s of SHAPES; track s) {
-          <button class="btn btn-tool" [class.active]="E.cellShape===s" (click)="setShape(s)" style="font-size:11px;">{{ SHAPE_LABELS[s] }}</button>
+          <button class="btn btn-tool" [class.active]="E.cellShape===s"
+                  (click)="setShape(s)"
+                  [title]="E.cellShape===s ? 'Click to cycle direction' : ''"
+                  style="font-size:11px;">
+            {{ activeVariantLabel(s) }}
+          </button>
         }
       </div>
     </div>
@@ -96,19 +113,47 @@
       <input type="range" [value]="E.fps" (input)="setFps($event)" min="1" max="30" style="width:100%;" />
     </div>
 
-    <!-- Frames -->
+    <!-- Frames — drag/drop, insert between -->
     <div class="sidebar-section" style="flex:1;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
         <span class="section-label" style="margin:0;">FRAMES <span class="hint-label">←/→</span></span>
         <span class="slider-val">{{ E.currentFrame + 1 }}/{{ E.frames.length }}</span>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+
+      <div class="frames-list">
         @for (f of E.frames; track $index; let i = $index) {
-          <button class="btn-frame" [class.active]="E.currentFrame===i" (click)="selectFrame(i)">{{ i + 1 }}</button>
+          <!-- Insert-before zone -->
+          <div class="frame-insert-zone"
+               [class.active]="dragOverIndex === i && dragIndex !== null && dragIndex !== i"
+               (dragover)="onFrameDragOver($event, i)"
+               (drop)="onFrameDrop($event, i)">
+            <button class="frame-insert-btn" (click)="insertBefore(i)" title="Insert frame here">+</button>
+          </div>
+          <!-- Frame tile -->
+          <div class="frame-tile"
+               [class.active]="E.currentFrame === i"
+               [class.dragging]="dragIndex === i"
+               draggable="true"
+               (click)="selectFrame(i)"
+               (dragstart)="onFrameDragStart($event, i)"
+               (dragover)="onFrameDragOver($event, i)"
+               (drop)="onFrameDrop($event, i)"
+               (dragend)="onFrameDragEnd()">
+            {{ i + 1 }}
+          </div>
         }
-        <button class="btn-frame" (click)="E.addFrame()" style="font-size:14px;color:#999;">+</button>
+        <!-- Insert at end -->
+        <div class="frame-insert-zone"
+             [class.active]="dragOverIndex === E.frames.length && dragIndex !== null"
+             (dragover)="onFrameDragOver($event, E.frames.length)"
+             (drop)="onFrameDrop($event, E.frames.length)">
+          <button class="frame-insert-btn" (click)="insertBefore(E.frames.length)" title="Insert frame at end">+</button>
+        </div>
+        <!-- Add button -->
+        <div class="frame-tile add-frame" (click)="E.addFrame()">+</div>
       </div>
-      <div style="display:flex;gap:4px;">
+
+      <div style="display:flex;gap:4px;margin-top:6px;">
         <button class="btn-op" style="flex:1;" (click)="E.copyFrame()">COPY</button>
         @if (E.frames.length > 1) {
           <button class="btn-op btn-danger" style="flex:1;" (click)="E.deleteFrame()">DEL</button>
@@ -120,26 +165,10 @@
     <div class="hints">
       <div>SPC play · ←/A →/D frames</div>
       <div>Q/E tools · ⇧Q/⇧E first/last</div>
-      <div>W onion · F2 preview · F3 export</div>
+      <div>F2 preview · F3 export · ⌘Z undo</div>
     </div>
   </div>
 </div>
-
-<!-- Actual-size preview overlay -->
-@if (showPreview) {
-  <div class="preview-overlay" (click)="togglePreview()">
-    <div class="preview-box" (click)="$event.stopPropagation()">
-      <div class="preview-label">ACTUAL SIZE — {{ E.gridSize }}×{{ E.gridSize }}px <span style="color:#444;">(click outside to close)</span></div>
-      <div class="preview-checkerboard">
-        <img [src]="previewDataUrl" [style.width.px]="E.gridSize" [style.height.px]="E.gridSize"
-             style="image-rendering:pixelated;display:block;" />
-      </div>
-      <div class="preview-label" style="margin-top:8px;color:#444;">Zoomed ×8</div>
-      <img [src]="previewDataUrl" [style.width.px]="E.gridSize*8" [style.height.px]="E.gridSize*8"
-           style="image-rendering:pixelated;display:block;margin-top:4px;" />
-    </div>
-  </div>
-}
 
 <!-- Export Dialog -->
 @if (exportOpen) {
@@ -147,7 +176,6 @@
     <div class="dialog" (click)="$event.stopPropagation()">
       <div class="dialog-title">EXPORT</div>
 
-      <!-- Color settings -->
       <div class="dialog-section-label">COLOR SETTINGS</div>
       <div class="color-grid">
         <div class="color-row">
@@ -176,62 +204,28 @@
         </div>
       </div>
 
-      <!-- Loop option -->
       <div class="dialog-section-label" style="margin-top:12px;">ANIMATION</div>
       <label class="transp-label" style="font-size:11px;gap:8px;">
         <input type="checkbox" [(ngModel)]="E.exportLoop" (change)="E.save()" style="accent-color:#6366f1;" />
-        Loop (applies to GIF and video)
+        Loop (GIF and video)
       </label>
 
-      <!-- Current frame exports -->
       <div class="dialog-section-label" style="margin-top:12px;">CURRENT FRAME</div>
       <div class="dialog-row">
-        <button class="dialog-btn" (click)="doExport('png')">
-          <span class="dialog-btn-icon">🖼</span>
-          <span class="dialog-btn-label">PNG</span>
-          <span class="dialog-btn-desc">Raster image</span>
-        </button>
-        <button class="dialog-btn" (click)="doExport('svg')">
-          <span class="dialog-btn-icon">⬡</span>
-          <span class="dialog-btn-label">SVG</span>
-          <span class="dialog-btn-desc">Vector</span>
-        </button>
-        <button class="dialog-btn" (click)="doExport('glyph')">
-          <span class="dialog-btn-icon">▓</span>
-          <span class="dialog-btn-label">GLYPH</span>
-          <span class="dialog-btn-desc">Unicode + clipboard</span>
-        </button>
+        <button class="dialog-btn" (click)="doExport('png')"><span class="dialog-btn-icon">🖼</span><span class="dialog-btn-label">PNG</span><span class="dialog-btn-desc">Raster</span></button>
+        <button class="dialog-btn" (click)="doExport('svg')"><span class="dialog-btn-icon">⬡</span><span class="dialog-btn-label">SVG</span><span class="dialog-btn-desc">Vector</span></button>
+        <button class="dialog-btn" (click)="doExport('glyph')"><span class="dialog-btn-icon">▓</span><span class="dialog-btn-label">GLYPH</span><span class="dialog-btn-desc">Unicode + clipboard</span></button>
       </div>
 
-      <!-- All frames exports -->
       <div class="dialog-section-label" style="margin-top:12px;">ALL FRAMES</div>
       <div class="dialog-row">
-        <button class="dialog-btn" (click)="doExport('sheet')">
-          <span class="dialog-btn-icon">▦</span>
-          <span class="dialog-btn-label">SHEET</span>
-          <span class="dialog-btn-desc">Sprite sheet</span>
-        </button>
-        <button class="dialog-btn" (click)="doExport('gif')">
-          <span class="dialog-btn-icon">◎</span>
-          <span class="dialog-btn-label">GIF</span>
-          <span class="dialog-btn-desc">Animated · {{ E.fps }}fps</span>
-        </button>
-        <button class="dialog-btn" (click)="doExport('video')">
-          <span class="dialog-btn-icon">▶</span>
-          <span class="dialog-btn-label">VIDEO</span>
-          <span class="dialog-btn-desc">WebM · {{ E.fps }}fps</span>
-        </button>
-        <button class="dialog-btn" (click)="doExport('html')" style="flex-basis:100%;">
-          <span class="dialog-btn-icon">‹›</span>
-          <span class="dialog-btn-label">HTML SNIPPET</span>
-          <span class="dialog-btn-desc">Drop-in animated embed</span>
-        </button>
+        <button class="dialog-btn" (click)="doExport('sheet')"><span class="dialog-btn-icon">▦</span><span class="dialog-btn-label">SHEET</span><span class="dialog-btn-desc">Sprite sheet</span></button>
+        <button class="dialog-btn" (click)="doExport('gif')"><span class="dialog-btn-icon">◎</span><span class="dialog-btn-label">GIF</span><span class="dialog-btn-desc">{{ E.fps }}fps</span></button>
+        <button class="dialog-btn" (click)="doExport('video')"><span class="dialog-btn-icon">▶</span><span class="dialog-btn-label">VIDEO</span><span class="dialog-btn-desc">WebM</span></button>
+        <button class="dialog-btn" (click)="doExport('html')" style="flex-basis:100%;"><span class="dialog-btn-icon">‹›</span><span class="dialog-btn-label">HTML SNIPPET</span><span class="dialog-btn-desc">Drop-in animated embed</span></button>
       </div>
 
-      @if (exportStatus) {
-        <div class="dialog-status">{{ exportStatus }}</div>
-      }
-
+      @if (exportStatus) { <div class="dialog-status">{{ exportStatus }}</div> }
       <button class="dialog-close" (click)="closeExport()">✕ CLOSE</button>
     </div>
   </div>

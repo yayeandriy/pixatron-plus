@@ -11,30 +11,34 @@ export function createSketch(engine: PixelEngine) {
       const s = ps() - E.gap;
       const ox = x * ps() + E.gap / 2;
       const oy = y * ps() + E.gap / 2;
-      switch (E.cellShape) {
+      const v = E.cellVariant;
+
+      switch (v) {
         case 'square':    p.rect(ox, oy, s, s); break;
-        case 'circle':    p.ellipse(ox + s / 2, oy + s / 2, s, s); break;
-        case 'triangle':  p.triangle(ox + s / 2, oy, ox + s, oy + s, ox, oy + s); break;
-        case 'h-stripes':
-          for (let i = 0; i < 3; i++) p.rect(ox, oy + i * (s / 3) + 1, s, s / 3 - 2);
-          break;
-        case 'v-stripes':
-          for (let i = 0; i < 3; i++) p.rect(ox + i * (s / 3) + 1, oy, s / 3 - 2, s);
-          break;
-        case 'd-stripes': {
+        case 'circle':    p.ellipse(ox + s/2, oy + s/2, s, s); break;
+        case 'tri-up':    p.triangle(ox+s/2, oy, ox+s, oy+s, ox, oy+s); break;
+        case 'tri-down':  p.triangle(ox, oy, ox+s, oy, ox+s/2, oy+s); break;
+        case 'tri-left':  p.triangle(ox+s, oy, ox+s, oy+s, ox, oy+s/2); break;
+        case 'tri-right': p.triangle(ox, oy, ox+s, oy+s/2, ox, oy+s); break;
+        case 'h-stripes': for(let i=0;i<3;i++) p.rect(ox, oy+i*(s/3)+1, s, s/3-2); break;
+        case 'v-stripes': for(let i=0;i<3;i++) p.rect(ox+i*(s/3)+1, oy, s/3-2, s); break;
+        case 'd-stripes-tl':
+        case 'd-stripes-tr': {
           const ctx = (p as any).drawingContext as CanvasRenderingContext2D;
+          const fc = (p as any)._renderer.states?.fillColor;
           ctx.save();
           ctx.beginPath(); ctx.rect(ox, oy, s, s); ctx.clip();
-          // Use current p5 fill color
-          const fc = (p as any)._renderer.states?.fillColor;
-          ctx.strokeStyle = fc ? `rgba(${p.red(fc)},${p.green(fc)},${p.blue(fc)},${alpha / 255})` : `rgba(255,255,255,${alpha / 255})`;
+          ctx.strokeStyle = fc ? `rgba(${p.red(fc)},${p.green(fc)},${p.blue(fc)},${alpha/255})` : `rgba(255,255,255,${alpha/255})`;
           ctx.lineWidth = 1.5;
-          for (let i = -s; i < s * 2; i += 4) {
-            ctx.beginPath(); ctx.moveTo(ox + i, oy); ctx.lineTo(ox + i + s, oy + s); ctx.stroke();
+          if (v === 'd-stripes-tl') {
+            for(let i=-s;i<s*2;i+=4){ ctx.beginPath(); ctx.moveTo(ox+i,oy); ctx.lineTo(ox+i+s,oy+s); ctx.stroke(); }
+          } else {
+            for(let i=-s;i<s*2;i+=4){ ctx.beginPath(); ctx.moveTo(ox+s-i,oy); ctx.lineTo(ox-i,oy+s); ctx.stroke(); }
           }
           ctx.restore();
           break;
         }
+        default: p.rect(ox, oy, s, s);
       }
     }
 
@@ -96,24 +100,24 @@ export function createSketch(engine: PixelEngine) {
               if (x === mnX || x === mxX || y === mnY || y === mxY) cell(x, y);
         } else if (E.activeTool === 'line') {
           let lx = x1, ly = y1;
-          const dx = Math.abs(x2 - lx), dy = Math.abs(y2 - ly), sx = lx < x2 ? 1 : -1, sy = ly < y2 ? 1 : -1;
+          const dx = Math.abs(x2-lx), dy = Math.abs(y2-ly), sx = lx<x2?1:-1, sy = ly<y2?1:-1;
           let err = dx - dy;
           while (true) {
             cell(lx, ly);
             if (lx === x2 && ly === y2) break;
-            const e2 = 2 * err;
+            const e2 = 2*err;
             if (e2 > -dy) { err -= dy; lx += sx; }
             if (e2 < dx) { err += dx; ly += sy; }
           }
         } else {
-          const r = Math.round(Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2));
+          const r = Math.round(Math.sqrt((x2-x1)**2 + (y2-y1)**2));
           let cx = r, cy = 0, er = 0;
           while (cx >= cy) {
             [[x1+cx,y1+cy],[x1+cy,y1+cx],[x1-cy,y1+cx],[x1-cx,y1+cy],
              [x1-cx,y1-cy],[x1-cy,y1-cx],[x1+cy,y1-cx],[x1+cx,y1-cy]]
             .forEach(([px, py]) => cell(px, py));
-            if (er <= 0) { cy++; er += 2 * cy + 1; }
-            if (er > 0) { cx--; er -= 2 * cx + 1; }
+            if (er <= 0) { cy++; er += 2*cy+1; }
+            if (er > 0) { cx--; er -= 2*cx+1; }
           }
         }
       }
