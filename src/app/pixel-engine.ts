@@ -166,7 +166,8 @@ export class PixelEngine {
         frames: this.frames, currentFrame: this.currentFrame,
         gridSize: this.gridSize, gap: this.gap, fps: this.fps,
         cellShape: this.cellShape, onionSkin: this.onionSkin,
-        onionSkinOpacity: this.onionSkinOpacity
+        onionSkinOpacity: this.onionSkinOpacity,
+        activeTool: this.activeTool, isPlaying: this.isPlaying
       }));
     } catch { }
   }
@@ -183,6 +184,8 @@ export class PixelEngine {
       this.cellShape = d.cellShape || 'square';
       this.onionSkin = d.onionSkin || false;
       this.onionSkinOpacity = d.onionSkinOpacity || 30;
+      this.activeTool = d.activeTool || 'pencil';
+      this.isPlaying = d.isPlaying || false;
     } catch { }
   }
 }

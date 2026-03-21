@@ -31,17 +31,16 @@ export class App implements OnInit {
   onKey(e: KeyboardEvent) {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    const k = e.key.toLowerCase();
-    switch (k) {
-      case ' ': this.E.isPlaying = !this.E.isPlaying; break;
-      case 'arrowleft': case 'a': this.E.goPrev(); break;
-      case 'arrowright': case 'd': this.E.goNext(); break;
-      case 'w': this.E.onionSkin = !this.E.onionSkin; this.E.save(); break;
-      case 'e': this.E.cycleTool(1); break;
-      case 'q': this.E.cycleTool(-1); break;
-      case 'delete': case 'backspace': this.E.deleteFrame(); break;
-      default: return;
-    }
+    console.log('KEY:', e.code, e.key, e.keyCode);
+    const c = e.code;
+    if (c === 'Space') { this.E.isPlaying = !this.E.isPlaying; }
+    else if (c === 'ArrowLeft' || c === 'KeyA') { this.E.goPrev(); }
+    else if (c === 'ArrowRight' || c === 'KeyD') { this.E.goNext(); }
+    else if (c === 'KeyW') { this.E.onionSkin = !this.E.onionSkin; this.E.save(); }
+    else if (c === 'KeyE') { this.E.cycleTool(1); }
+    else if (c === 'KeyQ') { this.E.cycleTool(-1); }
+    else if (c === 'Delete' || c === 'Backspace') { this.E.deleteFrame(); }
+    else { return; }
     e.preventDefault();
     e.stopPropagation();
   }
