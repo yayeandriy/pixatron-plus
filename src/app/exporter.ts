@@ -274,25 +274,24 @@ export function exportGlyph(engine: PixelEngine) {
 // ── Actual-size preview canvas ────────────────────────────────────────────────
 
 export function renderActualSize(engine: PixelEngine, frameIndex: number): HTMLCanvasElement {
-  // 1px per grid cell (no gap, no scaling)
+  // 1px per grid cell — uses canvas display colors (not export colors)
   const { gridSize } = engine;
   const f = engine.frames[frameIndex];
 
-  const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? 'transparent';
-  const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? 'transparent';
-  const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? 'transparent';
+  const filledColor = engine.cellFillColor  || '#ffffff';
+  const emptyColor  = engine.cellEmptyColor || '#1e1e1e';
+  const bgColor     = engine.pageBg         || '#0a0a0a';
 
   const c = document.createElement('canvas');
   c.width = gridSize; c.height = gridSize;
   const ctx = c.getContext('2d')!;
 
-  if (bgColor !== 'transparent') { ctx.fillStyle = bgColor; ctx.fillRect(0,0,gridSize,gridSize); }
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, gridSize, gridSize);
 
   if (f) for (let y = 0; y < gridSize; y++)
     for (let x = 0; x < gridSize; x++) {
-      const color = f[y]?.[x] ? filledColor : emptyColor;
-      if (!color || color === 'transparent') continue;
-      ctx.fillStyle = color;
+      ctx.fillStyle = f[y]?.[x] ? filledColor : emptyColor;
       ctx.fillRect(x, y, 1, 1);
     }
 
