@@ -50,6 +50,7 @@ export class App implements OnInit, OnDestroy {
   exportStatus = '';
 
   @ViewChild('canvasContainer', { static: true }) canvasRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('fileImport') fileImportRef!: ElementRef<HTMLInputElement>;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -256,6 +257,45 @@ export class App implements OnInit, OnDestroy {
   onFrameDrop(e: DragEvent, i: number) { e.preventDefault(); if (this.dragIndex !== null && this.dragIndex !== i) this.E.reorderFrame(this.dragIndex, i); this.dragIndex = null; this.dragOverIndex = null; }
   onFrameDragEnd() { this.dragIndex = null; this.dragOverIndex = null; }
   insertBefore(i: number) { this.E.insertFrameAt(i); }
+
+  // ── File save/load ──
+
+  saveProjectFile(id: string, e: Event) {
+    e.stopPropagation();
+    if (id === this.activeProjectId) saveProject(id, this.E, this.activeProjectName);
+    const state = loadProjectState(id);
+    if (!state) return;
+    const name = this.projects.find(p => p.id === id)?.name || 'project';
+    const json = JSON.stringify({ pixatron: '1', name, state }, null, 2);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = name.replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.pixatron';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  triggerImport() {
+    this.fileImportRef.nativeElement.click();
+  }
+
+  onImportFile(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result as string);
+        if (!parsed.pixatron || !parsed.state) return;
+        const eng = new PixelEngine();
+        eng.loadFromState(parsed.state);
+        const id = createProject(eng, parsed.name || file.name.replace(/\.pixatron$/i, ''));
+        this.projects = listProjects();
+        this.switchToProject(id);
+      } catch {}
+      (e.target as HTMLInputElement).value = '';
+    };
+    reader.readAsText(file);
+  }
 
   // ── Export ──
   openExport() { this.exportOpen = true; this.exportStatus = ''; this.E.blockInput = true; }

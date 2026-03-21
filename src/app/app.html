@@ -190,13 +190,19 @@
   </div><!-- /work-area -->
 </div><!-- /main-layout -->
 
+<!-- Hidden file input for project import -->
+<input #fileImport type="file" accept=".pixatron,.json" style="display:none" (change)="onImportFile($event)" />
+
 <!-- Projects Panel -->
 @if (projectsOpen) {
   <div class="dialog-backdrop" (click)="projectsOpen=false;E.blockInput=false">
     <div class="dialog" style="width:420px;max-height:80vh;display:flex;flex-direction:column;" (click)="$event.stopPropagation()">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
         <div class="dialog-title" style="margin:0;">PROJECTS</div>
-        <button class="btn-primary" style="width:auto;padding:5px 12px;font-size:11px;" (click)="newProject()">+ NEW</button>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-primary" style="width:auto;padding:5px 12px;font-size:11px;" (click)="triggerImport()">⬆ OPEN</button>
+          <button class="btn-primary" style="width:auto;padding:5px 12px;font-size:11px;" (click)="newProject()">+ NEW</button>
+        </div>
       </div>
 
       <div class="projects-list">
@@ -224,6 +230,7 @@
             <div class="project-actions" (click)="$event.stopPropagation()">
               <button class="btn-icon" (click)="startRename(p,$event)" title="Rename">✎</button>
               <button class="btn-icon" (click)="duplicateProjectAction(p.id,$event)" title="Duplicate">⎘</button>
+              <button class="btn-icon" (click)="saveProjectFile(p.id,$event)" title="Save to file">⬇</button>
               @if (projects.length > 1) {
                 <button class="btn-icon" style="color:#884444;" (click)="deleteProjectAction(p.id,$event)" title="Delete">✕</button>
               }
