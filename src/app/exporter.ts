@@ -292,45 +292,69 @@ export async function exportVideo(engine: PixelEngine) {
 // ── HTML snippet ──────────────────────────────────────────────────────────────
 
 export function exportHTML(engine: PixelEngine) {
-  const { gridSize, gap, pixelSize, cellShape, canvasSize, fps } = engine;
-  const n = engine.frames.length;
-  const ps = pixelSize;
+  const { gridSize, gap, fps } = engine;
+  const scale    = engine.exportScale || 4;
+  const dispSize = gridSize * scale;
+  const variant  = engine.cellVariant || engine.cellShape;
 
   const filledColor = resolvedColor(engine.exportFilledColor, engine.exportFilledTransparent) ?? 'transparent';
   const emptyColor  = resolvedColor(engine.exportEmptyColor,  engine.exportEmptyTransparent)  ?? 'transparent';
   const bgColor     = resolvedColor(engine.exportGapColor,    engine.exportGapTransparent)    ?? 'transparent';
 
-  // Encode each frame as SVG data URI
-  const svgs = engine.frames.map((_, i) => {
-    const f = engine.frames[i];
+  // Each frame SVG: 1 unit per cell, browser scales via CSS
+  const svgFrames = engine.frames.map(f => {
     let shapes = '';
     for (let y = 0; y < gridSize; y++)
       for (let x = 0; x < gridSize; x++) {
         const color = f[y]?.[x] ? filledColor : emptyColor;
-        if (color === 'transparent') continue;
-        const ox = x*ps+gap/2, oy = y*ps+gap/2, s = ps-gap;
-        shapes += `<g fill="${color}">${cellToSVG(cellShape,ox,oy,s)}</g>`;
+        if (!color || color === 'transparent') continue;
+        const s = Math.max(0, 1 - gap);
+        const ox = x + gap / 2, oy = y + gap / 2;
+        shapes += '<g fill="' + color + '">' + cellToSVG(variant, ox, oy, s) + '</g>';
       }
-    return buildSVG(canvasSize, bgColor, shapes).replace(/\n/g,' ');
+    const svg = '<?xml version="1.0" encoding="UTF-8"?>'
+      + '<svg xmlns="http://www.w3.org/2000/svg"'
+      + ' width="' + gridSize + '" height="' + gridSize + '"'
+      + ' viewBox="0 0 ' + gridSize + ' ' + gridSize + '">'
+      + '<rect width="' + gridSize + '" height="' + gridSize + '" fill="' + bgColor + '"/>'
+      + shapes
+      + '</svg>';
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   });
 
-  const loopJs = engine.exportLoop ? '' : `\n    if (frame >= frames.length - 1) { clearInterval(timer); return; }`;
-  const html = `<!-- Pixatron animation (${n} frame${n>1?'s':''}, ${fps}fps) -->
-<div class="pixatron" style="width:${canvasSize}px;height:${canvasSize}px;position:relative;display:inline-block;">
-  <img id="pixatron-frame" src="" alt="pixel art" style="width:100%;height:100%;image-rendering:pixelated;" />
-</div>
-<script>
-(function() {
-  var frames = ${JSON.stringify(svgs.map(s => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s)))};
-  var frame = 0;
-  var img = document.getElementById('pixatron-frame');
-  img.src = frames[0];
-  ${n > 1 ? `var timer = setInterval(function() {${loopJs}
-    frame = (frame + 1) % frames.length;
-    img.src = frames[frame];
-  }, ${Math.round(1000/fps)});` : ''}
-})();
-</script>`;
+  const delayMs = Math.round(1000 / fps);
+  const loopStop = engine.exportLoop ? '' : 'if(frame>=frames.length-1){clearInterval(timer);return;}';
+  const n = engine.frames.length;
+
+  const animScript = n > 1
+    ? 'var timer=setInterval(function(){' + loopStop + 'frame=(frame+1)%frames.length;img.src=frames[frame];}, ' + delayMs + ');'
+    : '';
+
+  const html = '<!-- Pixatron animation (' + n + ' frame' + (n > 1 ? 's' : '') + ', ' + fps + 'fps) -->
+'
+    + '<div class="pixatron" style="width:' + dispSize + 'px;height:' + dispSize + 'px;position:relative;display:inline-block;">
+'
+    + '  <img id="pixatron-frame" src="" alt="pixel art" style="width:' + dispSize + 'px;height:' + dispSize + 'px;image-rendering:pixelated;" />
+'
+    + '</div>
+'
+    + '<script>
+'
+    + '(function() {
+'
+    + '  var frames = ' + JSON.stringify(svgFrames) + ';
+'
+    + '  var frame = 0;
+'
+    + '  var img = document.getElementById('pixatron-frame');
+'
+    + '  img.src = frames[0];
+'
+    + '  ' + animScript + '
+'
+    + '})();
+'
+    + '</script>';
 
   downloadText(html, 'pixatron.html', 'text/html');
 }
