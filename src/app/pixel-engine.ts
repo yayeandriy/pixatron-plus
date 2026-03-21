@@ -209,7 +209,8 @@ export class PixelEngine {
   }
 
   goPrev() { if (this.currentFrame > 0) this.currentFrame--; }
-  goNext() { if (this.currentFrame >= this.frames.length - 1) this.addFrame(); else this.currentFrame++; }
+  goNext() { if (this.currentFrame < this.frames.length - 1) this.currentFrame++; }
+  goNextOrCreate() { if (this.currentFrame >= this.frames.length - 1) this.addFrame(); else this.currentFrame++; }
   goFirst() { this.currentFrame = 0; }
   goLast() { this.currentFrame = this.frames.length - 1; }
   goNextLoop() { this.currentFrame = (this.currentFrame + 1) % this.frames.length; }
