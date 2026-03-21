@@ -53,6 +53,7 @@ export class App implements OnInit {
     else if (key === 'Delete' || key === 'Backspace') { this.E.deleteFrame(); }
     else if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { this.E.undo(); }
     else if ((e.metaKey || e.ctrlKey) && (key === 'y' || (key === 'z' && e.shiftKey))) { this.E.redo(); }
+    else if (key === 'r' || key === 'R') { this.openExport(); }
     else { return; }
 
     e.preventDefault();

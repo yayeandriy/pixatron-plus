@@ -22,6 +22,12 @@ export class PixelEngine {
   onionSkin = false;
   onionSkinOpacity = 30;
 
+  // export settings
+  exportFilledColor = '#ffffff';
+  exportEmptyColor = '#0e0e0e';
+  exportGapColor = '#0e0e0e';      // '' = transparent
+  exportGapTransparent = false;
+
   // drawing state
   isDrawing = false;
   drawStart = { x: 0, y: 0 };
@@ -257,7 +263,11 @@ export class PixelEngine {
         gridSize: this.gridSize, gap: this.gap, fps: this.fps,
         cellShape: this.cellShape, onionSkin: this.onionSkin,
         onionSkinOpacity: this.onionSkinOpacity,
-        activeTool: this.activeTool, isPlaying: this.isPlaying
+        activeTool: this.activeTool, isPlaying: this.isPlaying,
+        exportFilledColor: this.exportFilledColor,
+        exportEmptyColor: this.exportEmptyColor,
+        exportGapColor: this.exportGapColor,
+        exportGapTransparent: this.exportGapTransparent,
       }));
     } catch { }
   }
@@ -276,6 +286,10 @@ export class PixelEngine {
       this.onionSkinOpacity = d.onionSkinOpacity || 30;
       this.activeTool = d.activeTool || 'pencil';
       this.isPlaying = d.isPlaying || false;
+      this.exportFilledColor = d.exportFilledColor || '#ffffff';
+      this.exportEmptyColor = d.exportEmptyColor || '#0e0e0e';
+      this.exportGapColor = d.exportGapColor || '#0e0e0e';
+      this.exportGapTransparent = d.exportGapTransparent || false;
     } catch { }
   }
 }

@@ -12,19 +12,28 @@ function renderFrameToCanvas(
   const ps = pixelSize * scale;
   const g = gap * scale;
 
+  const filledColor = engine.exportFilledColor || '#ffffff';
+  const emptyColor  = engine.exportEmptyColor  || '#0e0e0e';
+  const gapColor    = engine.exportGapTransparent ? null : (engine.exportGapColor || emptyColor);
+
   const c = document.createElement('canvas');
   c.width = size; c.height = size;
   const ctx = c.getContext('2d')!;
-  ctx.fillStyle = '#0e0e0e';
-  ctx.fillRect(0, 0, size, size);
+
+  // Background (gap color or transparent)
+  if (gapColor) {
+    ctx.fillStyle = gapColor;
+    ctx.fillRect(0, 0, size, size);
+  }
 
   const f = engine.frames[frameIndex];
   if (!f) return c;
 
-  ctx.fillStyle = '#ffffff';
+  // Draw all cells (filled + empty)
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
-      if (!f[y]?.[x]) continue;
+      const filled = !!f[y]?.[x];
+      ctx.fillStyle = filled ? filledColor : emptyColor;
       const ox = x * ps + g / 2, oy = y * ps + g / 2, s = ps - g;
       drawCell(ctx, cellShape, ox, oy, s);
     }
@@ -101,20 +110,24 @@ export function exportSVG(engine: PixelEngine) {
   const f = engine.frame;
   const ps = pixelSize;
 
+  const filledColor = engine.exportFilledColor || '#ffffff';
+  const emptyColor  = engine.exportEmptyColor  || '#0e0e0e';
+  const bgColor     = engine.exportGapTransparent ? 'none' : (engine.exportGapColor || emptyColor);
+
   let shapes = '';
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
-      if (!f[y]?.[x]) continue;
+      const filled = !!f[y]?.[x];
+      const color = filled ? filledColor : emptyColor;
       const ox = x * ps + gap / 2, oy = y * ps + gap / 2, s = ps - gap;
-      shapes += cellToSVG(cellShape, ox, oy, s);
+      shapes += `\n  <g fill="${color}">` + cellToSVG(cellShape, ox, oy, s) + '\n  </g>';
     }
   }
 
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${canvasSize}" height="${canvasSize}" viewBox="0 0 ${canvasSize} ${canvasSize}">
-  <rect width="${canvasSize}" height="${canvasSize}" fill="#0e0e0e"/>
-  <g fill="#ffffff">${shapes}
-  </g>
+  <rect width="${canvasSize}" height="${canvasSize}" fill="${bgColor}"/>
+  ${shapes}
 </svg>`;
 
   download(new Blob([svg], { type: 'image/svg+xml' }), `pixatron-frame${engine.currentFrame + 1}.svg`);

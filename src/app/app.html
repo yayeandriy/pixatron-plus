@@ -122,7 +122,7 @@
     <div class="hints">
       <div>SPC play · ←/A →/D frames</div>
       <div>Q/E tools · ⇧Q/⇧E first/last</div>
-      <div>W onion · ⌘Z undo · ⌘Y redo</div>
+      <div>W onion · R export · ⌘Z/⌘Y undo</div>
     </div>
   </div>
 </div>
@@ -164,6 +164,31 @@
           <span class="dialog-btn-label">VIDEO</span>
           <span class="dialog-btn-desc">WebM at {{ E.fps }} fps</span>
         </button>
+      </div>
+
+      <div class="dialog-section-label" style="margin-top:16px;">COLOR SETTINGS</div>
+      <div class="color-grid">
+        <div class="color-row">
+          <span class="color-label">Filled cell</span>
+          <input type="color" [(ngModel)]="E.exportFilledColor" (change)="E.save()" class="color-input" />
+          <span class="color-val">{{ E.exportFilledColor }}</span>
+        </div>
+        <div class="color-row">
+          <span class="color-label">Empty cell</span>
+          <input type="color" [(ngModel)]="E.exportEmptyColor" (change)="E.save()" class="color-input" />
+          <span class="color-val">{{ E.exportEmptyColor }}</span>
+        </div>
+        <div class="color-row">
+          <span class="color-label">Gap / BG</span>
+          @if (!E.exportGapTransparent) {
+            <input type="color" [(ngModel)]="E.exportGapColor" (change)="E.save()" class="color-input" />
+            <span class="color-val">{{ E.exportGapColor }}</span>
+          }
+          <label class="transp-label">
+            <input type="checkbox" [(ngModel)]="E.exportGapTransparent" (change)="E.save()" />
+            transparent
+          </label>
+        </div>
       </div>
 
       @if (exportStatus) {

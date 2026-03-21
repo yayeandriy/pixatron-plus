@@ -225,3 +225,12 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
   letter-spacing: 0.05em;
 }
 .dialog-close:hover { background: #1a1a1a; color: #aaa; border-color: #444; }
+
+/* Color settings in dialog */
+.color-grid { display: flex; flex-direction: column; gap: 6px; }
+.color-row { display: flex; align-items: center; gap: 8px; }
+.color-label { color: #777; font-size: 10px; width: 70px; flex-shrink: 0; }
+.color-input { width: 28px; height: 22px; border: 1px solid #333; border-radius: 3px; padding: 1px; background: #1a1a1a; cursor: pointer; flex-shrink: 0; }
+.color-val { color: #555; font-size: 10px; flex: 1; }
+.transp-label { display: flex; align-items: center; gap: 4px; color: #666; font-size: 10px; cursor: pointer; }
+.transp-label input { accent-color: #6366f1; }
