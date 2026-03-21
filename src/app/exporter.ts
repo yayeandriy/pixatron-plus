@@ -330,33 +330,23 @@ export function exportHTML(engine: PixelEngine) {
     ? 'var timer=setInterval(function(){' + loopStop + 'frame=(frame+1)%frames.length;img.src=frames[frame];}, ' + delayMs + ');'
     : '';
 
-  const html = '<!-- Pixatron animation (' + n + ' frame' + (n > 1 ? 's' : '') + ', ' + fps + 'fps) -->
-'
-    + '<div class="pixatron" style="width:' + dispSize + 'px;height:' + dispSize + 'px;position:relative;display:inline-block;">
-'
-    + '  <img id="pixatron-frame" src="" alt="pixel art" style="width:' + dispSize + 'px;height:' + dispSize + 'px;image-rendering:pixelated;" />
-'
-    + '</div>
-'
-    + '<script>
-'
-    + '(function() {
-'
-    + '  var frames = ' + JSON.stringify(svgFrames) + ';
-'
-    + '  var frame = 0;
-'
-    + '  var img = document.getElementById('pixatron-frame');
-'
-    + '  img.src = frames[0];
-'
-    + '  ' + animScript + '
-'
-    + '})();
-'
-    + '</script>';
+  const html = [
+    '<!-- Pixatron animation (' + n + ' frame' + (n > 1 ? 's' : '') + ', ' + fps + 'fps) -->',
+    '<div class="pixatron" style="width:' + dispSize + 'px;height:' + dispSize + 'px;position:relative;display:inline-block;">',
+    '  <img id="pixatron-frame" src="" alt="pixel art" style="width:' + dispSize + 'px;height:' + dispSize + 'px;image-rendering:pixelated;" />',
+    '</div>',
+    '<script>',
+    '(function() {',
+    '  var frames = ' + JSON.stringify(svgFrames) + ';',
+    '  var frame = 0;',
+    "  var img = document.getElementById('pixatron-frame');",
+    '  img.src = frames[0];',
+    '  ' + animScript,
+    '})();',
+    '</script>'
+  ].join('\n');
 
-  downloadText(html, 'pixatron.html', 'text/html');
+    downloadText(html, 'pixatron.html', 'text/html');
 }
 
 // ── Glyph (Unicode block art) ─────────────────────────────────────────────────
