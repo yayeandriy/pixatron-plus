@@ -51,13 +51,12 @@ export class App implements OnInit {
     else if (key === 'ArrowLeft' || key === 'a' || key === 'A') { this.E.goPrev(); }
     else if (key === 'ArrowRight' || key === 'd' || key === 'D') { this.E.goNext(); }
     else if (key === 'Delete' || key === 'Backspace') { this.E.deleteFrame(); }
-    else if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { this.E.undo(); }
-    else if ((e.metaKey || e.ctrlKey) && (key === 'y' || (key === 'z' && e.shiftKey))) { this.E.redo(); }
-    else if (key === 'r' || key === 'R') { this.openExport(); }
+    else if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { this.E.undo(); e.preventDefault(); return; }
+    else if ((e.metaKey || e.ctrlKey) && (key === 'y' || (key === 'z' && e.shiftKey))) { this.E.redo(); e.preventDefault(); return; }
+    else if (e.key === 'F3') { this.openExport(); e.preventDefault(); return; }
     else { return; }
 
     e.preventDefault();
-    e.stopPropagation();
     this.cdr.detectChanges();
   }
 
