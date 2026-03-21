@@ -26,7 +26,7 @@
 
 .frames-bar-label {
   font-size: 10px;
-  color: #555;
+  color: #aaa;
   letter-spacing: 0.1em;
   white-space: nowrap;
   flex-shrink: 0;
@@ -34,7 +34,7 @@
 
 .frames-bar-count {
   font-size: 10px;
-  color: #444;
+  color: #ddd;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -72,7 +72,7 @@
   border-left: 1px solid #2a2a2a;
   font-family: 'Geist Mono', monospace;
   font-size: 11px;
-  color: #ccc;
+  color: #e8e8e8;
 }
 
 .sidebar-section {
@@ -81,21 +81,21 @@
 }
 
 .section-label {
-  color: #888;
+  color: #ddd;
   letter-spacing: 0.1em;
   font-size: 10px;
   margin-bottom: 6px;
   text-transform: uppercase;
 }
 
-.hint-label { color: #444; }
+.hint-label { color: #ddd; }
 
 .btn-grid { display: grid; gap: 3px; }
 
 /* Tool / shape buttons */
 .btn { padding: 4px 0; font-family: inherit; font-size: 9px; border-radius: 3px; cursor: pointer; }
-.btn-tool { background: #1a1a1a; color: #777; border: 1px solid #2a2a2a; transition: all 0.1s; }
-.btn-tool:hover { background: #222; color: #aaa; border-color: #444; }
+.btn-tool { background: #1a1a1a; color: #aaa; border: 1px solid #2a2a2a; transition: all 0.1s; }
+.btn-tool:hover { background: #222; color: #aaa; border-color: #ddd; }
 .btn-tool.active { background: #6366f1; color: #fff; border-color: #6366f1; }
 
 /* Op buttons */
@@ -110,7 +110,7 @@
   cursor: pointer;
   transition: all 0.1s;
 }
-.btn-op:hover { background: #222; color: #ddd; border-color: #444; }
+.btn-op:hover { background: #222; color: #ddd; border-color: #ddd; }
 .btn-op:disabled { cursor: default; }
 .btn-op.btn-danger { border-color: #3a1a1a; background: #1e0e0e; color: #884444; }
 .btn-op.btn-danger:hover { background: #2a0e0e; color: #cc6666; }
@@ -155,23 +155,24 @@
   width: 26px; height: 26px;
   font-family: inherit; font-size: 10px;
   border-radius: 3px; cursor: pointer;
-  background: #1a1a1a; color: #666;
+  background: #1a1a1a; color: #aaa;
   border: 1px solid #2a2a2a;
   transition: all 0.1s;
 }
-.btn-frame:hover { background: #222; color: #aaa; border-color: #444; }
+.btn-frame:hover { background: #222; color: #aaa; border-color: #ddd; }
 .btn-frame.active { background: #6366f1; color: #fff; border-color: #6366f1; }
 
 /* Sliders */
-.slider-row { display: flex; justify-content: space-between; margin-bottom: 3px; color: #777; }
-.slider-val { color: #bbb; }
+.slider-row { display: flex; justify-content: space-between; margin-bottom: 3px; color: #aaa; }
+.slider-val { color: #ddd; }
 input[type="range"] { width: 100%; accent-color: #6366f1; }
 
 /* Hints */
+/* hints */
 .hints {
   padding: 8px 12px;
   border-top: 1px solid #222;
-  color: #333;
+  color: #777;
   line-height: 1.7;
   font-size: 10px;
 }
@@ -205,7 +206,7 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
 
 .dialog-section-label {
   font-size: 10px;
-  color: #555;
+  color: #aaa;
   letter-spacing: 0.1em;
   margin-bottom: 8px;
   margin-top: 12px;
@@ -238,7 +239,7 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
 
 .dialog-btn-icon { font-size: 18px; }
 .dialog-btn-label { font-size: 11px; font-weight: 600; color: #ddd; letter-spacing: 0.05em; }
-.dialog-btn-desc { font-size: 9px; color: #555; text-align: center; }
+.dialog-btn-desc { font-size: 9px; color: #aaa; text-align: center; }
 
 .dialog-status {
   margin-top: 12px;
@@ -259,12 +260,12 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
   border-radius: 3px;
   border: 1px solid #2a2a2a;
   background: transparent;
-  color: #555;
+  color: #aaa;
   cursor: pointer;
   transition: all 0.1s;
   letter-spacing: 0.05em;
 }
-.dialog-close:hover { background: #1a1a1a; color: #aaa; border-color: #444; }
+.dialog-close:hover { background: #1a1a1a; color: #aaa; border-color: #ddd; }
 
 /* Inline preview — top-left of canvas area */
 .preview-inline {
@@ -275,7 +276,7 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
   cursor: pointer;
 }
 .canvas-area { position: relative; }
-.preview-label { font-size: 9px; color: #444; letter-spacing: 0.06em; margin-bottom: 4px; font-family: 'Geist Mono', monospace; }
+.preview-label { font-size: 9px; color: #ddd; letter-spacing: 0.06em; margin-bottom: 4px; font-family: 'Geist Mono', monospace; }
 .preview-checkerboard {
   background-image: linear-gradient(45deg,#333 25%,transparent 25%),
     linear-gradient(-45deg,#333 25%,transparent 25%),
@@ -300,13 +301,13 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
   width: 26px; height: 26px;
   display: flex; align-items: center; justify-content: center;
   font-family: inherit; font-size: 10px; border-radius: 3px; cursor: grab;
-  background: #1a1a1a; color: #666; border: 1px solid #2a2a2a;
+  background: #1a1a1a; color: #aaa; border: 1px solid #2a2a2a;
   user-select: none; transition: all 0.1s;
 }
-.frame-tile:hover { background: #222; color: #aaa; border-color: #444; }
+.frame-tile:hover { background: #222; color: #aaa; border-color: #ddd; }
 .frame-tile.active { background: #6366f1; color: #fff; border-color: #6366f1; }
 .frame-tile.dragging { opacity: 0.3; }
-.frame-tile.add-frame { color: #555; font-size: 14px; cursor: pointer; }
+.frame-tile.add-frame { color: #aaa; font-size: 14px; cursor: pointer; }
 .frame-tile.add-frame:hover { color: #aaa; }
 
 .frame-insert-zone {
@@ -323,7 +324,7 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
   display: none;
   width: 14px; height: 14px; border-radius: 50%;
   background: #1a1a1a; border: 1px solid #333;
-  color: #555; font-size: 10px; cursor: pointer; line-height: 1;
+  color: #aaa; font-size: 10px; cursor: pointer; line-height: 1;
   align-items: center; justify-content: center;
   position: absolute; z-index: 1;
 }
@@ -333,10 +334,10 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
 /* Icon button */
 .btn-icon {
   background: transparent; border: 1px solid #2a2a2a; border-radius: 3px;
-  color: #555; font-size: 14px; cursor: pointer; width: 24px; height: 24px;
+  color: #aaa; font-size: 14px; cursor: pointer; width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center; transition: all 0.1s;
 }
-.btn-icon:hover { color: #aaa; border-color: #444; }
+.btn-icon:hover { color: #aaa; border-color: #ddd; }
 .btn-icon.active { color: #a5b4fc; border-color: #6366f1; }
 
 /* Preview overlay */
@@ -350,7 +351,7 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
   padding: 20px; font-family: 'Geist Mono', monospace;
   box-shadow: 0 20px 60px rgba(0,0,0,0.8);
 }
-.preview-label { font-size: 10px; color: #666; letter-spacing: 0.08em; margin-bottom: 8px; }
+.preview-label { font-size: 10px; color: #aaa; letter-spacing: 0.08em; margin-bottom: 8px; }
 .preview-checkerboard {
   background-image: linear-gradient(45deg, #333 25%, transparent 25%),
     linear-gradient(-45deg, #333 25%, transparent 25%),
@@ -365,8 +366,8 @@ input[type="range"] { width: 100%; accent-color: #6366f1; }
 /* Color settings in dialog */
 .color-grid { display: flex; flex-direction: column; gap: 6px; }
 .color-row { display: flex; align-items: center; gap: 8px; }
-.color-label { color: #777; font-size: 10px; width: 70px; flex-shrink: 0; }
+.color-label { color: #aaa; font-size: 10px; width: 70px; flex-shrink: 0; }
 .color-input { width: 28px; height: 22px; border: 1px solid #333; border-radius: 3px; padding: 1px; background: #1a1a1a; cursor: pointer; flex-shrink: 0; }
-.color-val { color: #555; font-size: 10px; flex: 1; }
-.transp-label { display: flex; align-items: center; gap: 4px; color: #666; font-size: 10px; cursor: pointer; }
+.color-val { color: #aaa; font-size: 10px; flex: 1; }
+.transp-label { display: flex; align-items: center; gap: 4px; color: #aaa; font-size: 10px; cursor: pointer; }
 .transp-label input { accent-color: #6366f1; }
