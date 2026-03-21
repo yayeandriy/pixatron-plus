@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PixelEngine, TOOLS, SHAPES, TOOL_LABELS, SHAPE_LABELS, type Tool, type CellShape } from './pixel-engine';
 import { createSketch } from './p5-sketch';
+import { exportPNG, exportSpriteSheet, exportSVG, exportGIF, exportVideo } from './exporter';
 
 @Component({
   selector: 'app-root',
@@ -68,6 +69,9 @@ export class App implements OnInit {
   setShape(s: CellShape) { this.E.cellShape = s; this.E.save(); }
   selectFrame(i: number) { this.E.currentFrame = i; }
 
-  exportFrame() { if (this.p5Instance) this.E.exportPNG(this.p5Instance); }
-  exportSheet() { this.E.exportSpriteSheet(this.p5Instance); }
+  exportFrame()  { exportPNG(this.E); }
+  exportSheet()  { exportSpriteSheet(this.E); }
+  exportSVG()    { exportSVG(this.E); }
+  exportGIF()    { exportGIF(this.E); }
+  exportVideo()  { exportVideo(this.E); }
 }

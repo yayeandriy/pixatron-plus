@@ -84,9 +84,12 @@
     <!-- Export -->
     <div class="sidebar-section">
       <div class="section-label">EXPORT</div>
-      <div class="btn-grid" style="grid-template-columns:repeat(2,1fr)">
-        <button class="btn-op" (click)="exportFrame()">PNG</button>
-        <button class="btn-op" (click)="exportSheet()">SHEET</button>
+      <div class="btn-grid" style="grid-template-columns:repeat(3,1fr)">
+        <button class="btn-op" (click)="exportFrame()" title="Current frame as PNG">PNG</button>
+        <button class="btn-op" (click)="exportSVG()" title="Current frame as SVG">SVG</button>
+        <button class="btn-op" (click)="exportSheet()" title="All frames as sprite sheet">SHEET</button>
+        <button class="btn-op" (click)="exportGIF()" title="Animated GIF" style="grid-column:span 2">GIF</button>
+        <button class="btn-op" (click)="exportVideo()" title="WebM video">MOV</button>
       </div>
     </div>
 
