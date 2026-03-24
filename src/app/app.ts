@@ -178,17 +178,18 @@ export class App implements OnInit, OnDestroy {
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     const key = e.key;
-    if (key === 'Q') { this.E.goFirst(); }
-    else if (key === 'E' && e.shiftKey) { this.E.goLast(); }
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'D' || key === 'd')) { this.E.copyFrame(); e.preventDefault(); return; }
+    else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (key === 'E' || key === 'e')) { this.exportAllProjects(); e.preventDefault(); return; }
+    else if (key === 'Q') { this.E.goFirst(); }
+    else if (key === 'E' && e.shiftKey && !e.metaKey && !e.ctrlKey) { this.E.goLast(); }
     else if (key === 'q') { this.E.cycleTool(-1); }
-    else if (key === 'e') { this.E.cycleTool(1); }
+    else if (key === 'e' && !e.metaKey && !e.ctrlKey) { this.E.cycleTool(1); }
     else if (key === 'w' || key === 'W') { this.E.onionSkin = !this.E.onionSkin; this.E.save(); }
     else if (key === ' ') { this.E.isPlaying = !this.E.isPlaying; }
     else if (key === 'ArrowLeft' || key === 'a' || key === 'A') { this.E.goPrev(); }
     else if (key === 'ArrowRight' && e.shiftKey) { this.E.goNextOrCreate(); }
-    else if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === 'D') { this.E.goLast(); this.E.goNextOrCreate(); e.preventDefault(); return; }
-    else if (key === 'ArrowRight' || key === 'd' || key === 'D') { this.E.goNext(); }
-    else if (key === 'Delete' || key === 'Backspace') { this.E.deleteFrame(); }
+    else if (!e.metaKey && !e.ctrlKey && (key === 'ArrowRight' || key === 'd' || key === 'D')) { this.E.goNext(); }
+    else if (key === 'Delete' || key === 'Backspace' || (key === 'Z' && e.shiftKey && !e.metaKey && !e.ctrlKey)) { this.E.deleteFrame(); }
     else if ((e.metaKey || e.ctrlKey) && key === 'z' && !e.shiftKey) { this.E.undo(); e.preventDefault(); return; }
     else if ((e.metaKey || e.ctrlKey) && (key === 'y' || (key === 'z' && e.shiftKey))) { this.E.redo(); e.preventDefault(); return; }
     else if (e.key === 'F3') { this.openExport(); e.preventDefault(); return; }
@@ -278,6 +279,20 @@ export class App implements OnInit, OnDestroy {
     this.fileImportRef.nativeElement.click();
   }
 
+  exportAllProjects() {
+    if (this.activeProjectId) saveProject(this.activeProjectId, this.E, this.activeProjectName);
+    const all = listProjects().map(meta => ({
+      name: meta.name,
+      state: loadProjectState(meta.id),
+    })).filter(p => p.state);
+    const json = JSON.stringify({ pixatron: '1', projects: all }, null, 2);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+    a.download = 'pixatron-all-projects.pixatron';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
   onImportFile(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -285,12 +300,26 @@ export class App implements OnInit, OnDestroy {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(reader.result as string);
-        if (!parsed.pixatron || !parsed.state) return;
-        const eng = new PixelEngine();
-        eng.loadFromState(parsed.state);
-        const id = createProject(eng, parsed.name || file.name.replace(/\.pixatron$/i, ''));
-        this.projects = listProjects();
-        this.switchToProject(id);
+        if (!parsed.pixatron) return;
+        if (parsed.projects) {
+          // Bundle import
+          let lastId: string | null = null;
+          for (const p of parsed.projects) {
+            if (!p.state) continue;
+            const eng = new PixelEngine();
+            eng.loadFromState(p.state);
+            lastId = createProject(eng, p.name || 'Imported');
+          }
+          this.projects = listProjects();
+          if (lastId) this.switchToProject(lastId);
+        } else if (parsed.state) {
+          // Single project import
+          const eng = new PixelEngine();
+          eng.loadFromState(parsed.state);
+          const id = createProject(eng, parsed.name || file.name.replace(/\.pixatron$/i, ''));
+          this.projects = listProjects();
+          this.switchToProject(id);
+        }
       } catch {}
       (e.target as HTMLInputElement).value = '';
     };
