@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="172px" height="172px" viewBox="0 0 172 172" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>pixatron</title>
+    <g id="pixatron" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M144,20 L143.999,27.499 L152.5,27.5 L152.5,143.5 L143.999,143.499 L144,152 L28,152 L27.999,143.499 L19.5,143.5 L19.5,27.5 L27.999,27.499 L28,20 L144,20 Z M41.666,108 L63.833,108 L63.833,86 L41.666,86 L41.666,108 Z M108.166,86 L86,86 L86,108 L108.166,108 L108.166,86 Z M41.666,64 L63.833,64 L63.833,42 L41.666,42 L41.666,64 Z M108.166,42 L86,42 L86,64 L108.166,64 L108.166,42 Z" id="Shape" fill="#212121"></path>
+    </g>
+</svg>

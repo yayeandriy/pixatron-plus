@@ -80,7 +80,25 @@ function drawCell(ctx: CanvasRenderingContext2D, shape: string, ox: number, oy: 
   ctx.fill();
 }
 
-function download(blob: Blob, filename: string) {
+function isTauri(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
+async function download(blob: Blob, filename: string) {
+  if (isTauri()) {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const { invoke } = await import('@tauri-apps/api/core');
+    const ext = filename.split('.').pop() ?? '';
+    const path = await save({
+      defaultPath: filename,
+      filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }] : [],
+    });
+    if (!path) return; // user cancelled
+    const buf = await blob.arrayBuffer();
+    await invoke('save_binary_file', { path, data: Array.from(new Uint8Array(buf)) });
+    return;
+  }
+  // Browser fallback
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = filename;
@@ -88,21 +106,22 @@ function download(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-function downloadText(text: string, filename: string, mime = 'text/plain') {
-  download(new Blob([text], { type: mime }), filename);
+async function downloadText(text: string, filename: string, mime = 'text/plain') {
+  await download(new Blob([text], { type: mime }), filename);
 }
 
 // ── PNG ──────────────────────────────────────────────────────────────────────
 
-export function exportPNG(engine: PixelEngine) {
+export async function exportPNG(engine: PixelEngine) {
   const scale = engine.exportScale || 1;
   const c = renderFrameToCanvas(engine, engine.currentFrame, scale);
-  c.toBlob(blob => download(blob!, `pixatron-frame${engine.currentFrame+1}.png`), 'image/png');
+  const blob = await new Promise<Blob>(res => c.toBlob(b => res(b!), 'image/png'));
+  await download(blob, `pixatron-frame${engine.currentFrame+1}.png`);
 }
 
 // ── Sprite sheet ─────────────────────────────────────────────────────────────
 
-export function exportSpriteSheet(engine: PixelEngine) {
+export async function exportSpriteSheet(engine: PixelEngine) {
   const scale = engine.exportScale || 4;
   const n = engine.frames.length;
   const frames = engine.frames.map((_, i) => renderFrameToCanvas(engine, i, scale));
@@ -111,12 +130,13 @@ export function exportSpriteSheet(engine: PixelEngine) {
   sheet.width = size * n; sheet.height = size;
   const ctx = sheet.getContext('2d')!;
   for (let i = 0; i < n; i++) ctx.drawImage(frames[i], i * size, 0);
-  sheet.toBlob(blob => download(blob!, 'pixatron-spritesheet.png'), 'image/png');
+  const blob = await new Promise<Blob>(res => sheet.toBlob(b => res(b!), 'image/png'));
+  await download(blob, 'pixatron-spritesheet.png');
 }
 
 // ── SVG ───────────────────────────────────────────────────────────────────────
 
-export function exportSVG(engine: PixelEngine) {
+export async function exportSVG(engine: PixelEngine) {
   const { gridSize, gap, pixelSize, cellShape, canvasSize } = engine;
   const f = engine.frame, ps = pixelSize;
 
@@ -134,7 +154,7 @@ export function exportSVG(engine: PixelEngine) {
     }
 
   const svg = buildSVG(canvasSize, bgColor, shapes);
-  downloadText(svg, `pixatron-frame${engine.currentFrame+1}.svg`, 'image/svg+xml');
+  await downloadText(svg, `pixatron-frame${engine.currentFrame+1}.svg`, 'image/svg+xml');
 }
 
 function buildSVG(size: number, bg: string, shapes: string): string {
@@ -257,7 +277,7 @@ export async function exportGIF(engine: PixelEngine) {
   }
 
   const bytes = buf.slice(0, gw.end());
-  download(new Blob([bytes], { type: 'image/gif' }), 'pixatron.gif');
+  await download(new Blob([bytes], { type: 'image/gif' }), 'pixatron.gif');
 }
 
 // ── Video (WebM) ──────────────────────────────────────────────────────────────
@@ -291,7 +311,7 @@ export async function exportVideo(engine: PixelEngine) {
 
 // ── HTML snippet ──────────────────────────────────────────────────────────────
 
-export function exportHTML(engine: PixelEngine) {
+export async function exportHTML(engine: PixelEngine) {
   const { gridSize, gap, fps } = engine;
   const scale    = engine.exportScale || 4;
   const dispSize = gridSize * scale;
@@ -348,13 +368,13 @@ export function exportHTML(engine: PixelEngine) {
     '</script>'
   ].join('\n');
 
-    downloadText(html, 'pixatron.html', 'text/html');
+  await downloadText(html, 'pixatron.html', 'text/html');
   navigator.clipboard?.writeText(html).catch(() => {});
 }
 
 // ── Glyph (Unicode block art) ─────────────────────────────────────────────────
 
-export function exportGlyph(engine: PixelEngine) {
+export async function exportGlyph(engine: PixelEngine) {
   const { gridSize } = engine;
   const f = engine.frame;
 
@@ -372,7 +392,7 @@ export function exportGlyph(engine: PixelEngine) {
     text += '\n';
   }
 
-  downloadText(text, `pixatron-frame${engine.currentFrame+1}.txt`, 'text/plain');
+  await downloadText(text, `pixatron-frame${engine.currentFrame+1}.txt`, 'text/plain');
 
   // Also copy to clipboard
   navigator.clipboard?.writeText(text).catch(() => {});
